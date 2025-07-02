@@ -104,28 +104,7 @@
 
   let isPasswordVisible = false;
 
-  function togglePassword() {
-    const input = document.getElementById("password");
-    const iconContainer = document.getElementById("eyeIcon");
-
-    isPasswordVisible = !isPasswordVisible;
-    input.type = isPasswordVisible ? "text" : "password";
-
-    // Replace icon element to toggle
-    const newIcon = document.createElement("i");
-    newIcon.setAttribute("id", "eyeIcon");
-    newIcon.setAttribute("data-lucide", isPasswordVisible ? "eye-off" : "eye");
-    newIcon.classList.add("w-5", "h-5");
-
-    iconContainer.replaceWith(newIcon);
-    lucide.createIcons(); // Refresh icon rendering
-  }
-
-  // Attach toggle on DOM load
-  window.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
-    document.getElementById("togglePassword").addEventListener("click", togglePassword);
-  });
+  
 
   openModal.addEventListener('click', (e) => {
     e.preventDefault();
@@ -209,6 +188,29 @@
       loader.classList.add('hidden'); // ⬅️ Hide loader on error
       alert("Login failed: " + err.message);
     }
+  });
+
+  function togglePassword() {
+    const input = document.getElementById("password");
+    const iconContainer = document.getElementById("eyeIcon");
+
+    isPasswordVisible = !isPasswordVisible;
+    input.type = isPasswordVisible ? "text" : "password";
+
+    // Replace icon element to toggle
+    const newIcon = document.createElement("i");
+    newIcon.setAttribute("id", "eyeIcon");
+    newIcon.setAttribute("data-lucide", isPasswordVisible ? "eye-off" : "eye");
+    newIcon.classList.add("w-5", "h-5");
+
+    iconContainer.replaceWith(newIcon);
+    lucide.createIcons(); // Refresh icon rendering
+  }
+
+  // Attach toggle on DOM load
+  window.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+    document.getElementById("togglePassword").addEventListener("click", togglePassword);
   });
 </script>
 {% endblock %}
