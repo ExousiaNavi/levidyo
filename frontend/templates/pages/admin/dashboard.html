@@ -303,6 +303,7 @@ content %}
   }
 
   function updateDashboard(sub, tab) {
+    console.log(sub, tab)
     // 🔄 Show skeleton, hide real dashboard content
     $("#dashboard-content").hide();
     $("#skeleton-loader").show();
@@ -330,12 +331,12 @@ content %}
         let $pendingWithdrawContainer = $(
           "#pending-withdraw-container"
         ).empty();
-        if (sub === "deposit" || sub === "withdraw") {
+        if (tab === "Deposit" || tab === "Withdraw") {
           console.log(sub);
           updateKpi(kpis, target, $container);
         } else if (sub === "pendingdeposit") {
           updatePendingDeposit(kpis, target, $pendingDepositContainer);
-        } else {
+        } else if (sub === "pendingwithdraw") {
           updatePendingWithdraw(kpis, target, $pendingWithdrawContainer);
         }
         const $logList = $("ul.space-y-2").empty();

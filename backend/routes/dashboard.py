@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from fastapi import APIRouter, Request, Query
 from backend.core.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -6,8 +5,9 @@ from backend.core.auth import check_auth, NAV_LINKS
 from backend.core.deposit import get_hourly_deposit_data
 from backend.core.amount import get_target_amount 
 from backend.filters.brand import get_all_brands, get_supported_currencies, get_default_currency
+from datetime import datetime, timezone
+from typing import Optional
 router = APIRouter()
-
 date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 now = datetime.now(timezone.utc)
 formatted = now.strftime('%Y-%m-%d – %H:%M')
@@ -17,14 +17,15 @@ async def get_dashboard_data(
     request: Request,
     brand: str = Query(...),
     currency: str = Query(...),
-    table: str = Query(...),
+    table: Optional[str] = Query(None),
     tab: str = Query(...),
     
 ):
     try:
-        
-
-       
+        # Normalize table input
+        if not table or table.strip().lower() == "null":
+            table = "deposit"
+        print(table)
         # date = "2025-04-21"  # You can later make this dynamic
         combined_key = f"{brand}_{currency}"
         data = get_hourly_deposit_data(date, combined_key, brand, table)
