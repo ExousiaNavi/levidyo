@@ -17,15 +17,23 @@ async def get_dashboard_data(
     request: Request,
     brand: str = Query(...),
     currency: str = Query(...),
-    table: Optional[str] = Query(None),
-    tab: str = Query(...),
+    # table: Optional[str] = Query(None),
+    # tab: str = Query(...),
     
 ):
     try:
+        # Use only cookies (cleaner URL)
+        # table
+        table = request.cookies.get("sub") or "deposit"
+        # Name
+        tab = request.cookies.get("name") or "Deposit"
+        print("This is the ajax request...")
+        print(table,tab)
+        
         # Normalize table input
-        if not table or table.strip().lower() == "null":
-            table = "deposit"
-        print(table)
+        # if not table or table.strip().lower() == "null":
+        #     table = "deposit"
+        # print(table)
         # date = "2025-04-21"  # You can later make this dynamic
         combined_key = f"{brand}_{currency}"
         data = get_hourly_deposit_data(date, combined_key, brand, table)
@@ -48,12 +56,19 @@ async def get_dashboard_data(
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, brand: str = Query(default=None),
-    currency: str = Query(default=None),sub: str = Query(default='deposit'),
-    tab: str = Query(default='Deposit')):
+    currency: str = Query(default=None)
+    # sub: str = Query(default='deposit'),
+    # tab: str = Query(default='Deposit')
+    ):
+
     user = check_auth(request)
     if isinstance(user, RedirectResponse):
         return user
 
+    # Use only cookies (cleaner URL)
+    sub = request.cookies.get("sub") or "deposit"
+    tab = request.cookies.get("name") or "Deposit"
+    print(sub,tab)
     # 1. All available brands
     brands = get_all_brands()  # e.g., ['bj', 'baji']
 

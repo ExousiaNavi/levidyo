@@ -37,14 +37,14 @@
             <tr class="border-b hover:bg-gray-50">
               <td class="py-2 px-3">{{ u.email }}</td>
               <td class="py-2 px-3">
-                <form onsubmit="updateUserRole(event, '{{ u.id }}')" class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                   <select name="role" class="border px-2 py-1 rounded text-sm w-full sm:w-auto">
                       {% for role in roles %}
                       <option value="{{ role.label }}" {% if u.role == role.value %}selected{% endif %}>{{ role.label }}</option>
                       {% endfor %}
                   </select>
-                  <button type="submit" class="text-green-600 text-xs hover:underline">Update</button>
-              </form>
+                  <button data-user_id="{{ u.id }}" type="submit" class="role-update text-green-600 text-xs hover:underline">Update</button>
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -101,6 +101,16 @@
   </div>
 </div>
 
+<!-- Login Loader Overlay -->
+<div id="request-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-md hidden">
+  <div class="text-center">
+    <svg class="animate-spin h-10 w-10 text-green-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    <p class="text-sm text-green-700 font-medium" id="content-loader"></p>
+  </div>
+</div>
 
 <!-- JSON-safe roles data -->
 <script id="rolesData" type="application/json">
@@ -110,6 +120,8 @@
 <script>
   const links = document.querySelectorAll(".tab-link");
   const panes = document.querySelectorAll(".tab-pane");
+  const loader = document.getElementById('request-loader');
+  const content = document.getElementById('content-loader');
 
   links.forEach((link, i) => {
     link.addEventListener("click", () => {
@@ -169,55 +181,27 @@
 
     let html = "";
     users.forEach(user => {
+      console.log(user)
       html += `
         <tr class="border-b hover:bg-gray-50">
           <td class="py-2 px-3">${user.email}</td>
           <td class="py-2 px-3">
-            <form method="post" action="/users/${user.id}/change-role" class="flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <select name="role" class="border px-2 py-1 rounded text-sm">
                 ${roles.map(role => `
                   <option value="${role.label}" ${user.role.toLowerCase() === role.value ? "selected" : ""}>
                     ${role.label}
                   </option>`).join("")}
               </select>
-              <button type="submit" class="text-green-600 text-xs hover:underline">Update</button>
-            </form>
+              <button data-user_id="${user.id}" type="submit" class="role-update text-green-600 text-xs hover:underline">Update</button>
+            </div>
           </td>
-          
         </tr>
       `;
     });
 
     tableBody.innerHTML = html;
   }
-
-//   updates users role
-  async function updateUserRole(event, userId) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const role = formData.get("role");
-
-    try {
-        const res = await fetch(`/users/${userId}/change-role`, {
-        method: "POST",
-        body: new URLSearchParams({ role }),  // optional: serialize FormData to x-www-form-urlencoded
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-        await refreshUsersTable();
-        } else {
-        alert(`🚫 ${result.message || "Failed to update role."}`);
-        }
-    } catch (err) {
-        alert("⚠️ Something went wrong while updating the user role.");
-    }
-    }
 
 // update target amount
 async function loadTargetAmount() {
@@ -261,6 +245,56 @@ async function submitTargetAmount(event) {
 document.querySelectorAll(".tab-link").forEach((btn) => {
   btn.addEventListener("click", () => {
     if (btn.dataset.tab === "targetTab") loadTargetAmount();
+  });
+
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const tableBody = document.getElementById("usersTableBody");
+
+  // ✅ Prevent double or multiple bindings
+  if (tableBody.dataset.listenerAttached === "true") return;
+  tableBody.dataset.listenerAttached = "true";
+
+  console.log("✅ Bound single listener to #usersTableBody");
+
+  tableBody.addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("role-update")) return;
+
+    const button = event.target;
+    const userId = button.dataset.user_id;
+
+    // ⬅️ Get parent container of the button
+    const container = button.closest("td");
+    const select = container.querySelector("select[name='role']");
+    const selectedRole = select.value;
+
+    console.log("User ID:", userId);
+    console.log("Selected Role:", selectedRole);
+
+    try {
+      loader.classList.remove('hidden'); // ⬅️ Show the loader
+
+      const res = await fetch(`/users/${userId}/change-role`, {
+        method: "POST",
+        body: new URLSearchParams({ role: selectedRole }),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      
+      const result = await res.json();
+      if (!result.success) {
+        console.error(`❌ Failed to update role for ${userId}:`, result.message);
+      } else {
+        console.log(`✅ Role updated for ${userId}`);
+        await refreshUsersTable();
+        loader.classList.add('hidden'); // ⬅️ Show the loader
+      }
+    } catch (err) {
+      console.error(`⚠️ Error updating role for ${userId}:`, err);
+    }
   });
 });
 

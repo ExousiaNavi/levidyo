@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from backend.config import settings
-from backend.routes import auth, dashboard, deposit, profile, users, amount
+from backend.routes import auth, dashboard, deposit, profile, users, amount, context
 
 import backend.core.firebase  # auto-runs initialization
 from backend.core.whitelist import restrict_ip_middleware  # available ip
@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "frontend/static"), name="static")
 
 # Include routers
+app.include_router(context.router)
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(deposit.router)

@@ -12,9 +12,6 @@
 </div>
 
 
-
-
-
 <!-- User Info -->
 <div class="mb-4 text-xs text-gray-500 rounded-lg border border-gray-200 bg-white/70 p-3 space-y-1 shadow-sm">
   <div class="flex items-center gap-2">
@@ -43,7 +40,7 @@
         <!-- Submenu Items -->
         <div class="ml-3 space-y-0.5">
           {% for sub in link.submenu %}
-            <a href="{{ sub.url }}?sub={{ sub.table | urlencode }}&name={{ sub.name | urlencode }}"
+            <a href="/set-dashboard-context?sub={{ sub.table | urlencode }}&name={{ sub.name | urlencode }}"
                class="group flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 relative
                {% if sub.tab == current_page or (current_page == 'Dashboard' and sub.tab == 'deposit') %}
                  bg-green-100 text-green-700 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-green-500 before:rounded-r

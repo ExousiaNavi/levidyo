@@ -318,7 +318,7 @@ content %}
           history = data.history_log || [];
         const width = ((kpis.today_deposit / target) * 100).toFixed(2);
         $("#progress-bar").width(`${width}%`);
-        $("h2").text(`${tab} – ${brand.toUpperCase()}`);
+        $("h2").text(`${data.tab} – ${brand.toUpperCase()}`);
         buildCharts(
           data.chart_hours,
           data.today_values,
@@ -331,12 +331,12 @@ content %}
         let $pendingWithdrawContainer = $(
           "#pending-withdraw-container"
         ).empty();
-        if (tab === "Deposit" || tab === "Withdraw") {
-          console.log(sub);
+        if (data.tab === "Deposit" || data.tab === "Withdraw") {
+          console.log(data.tab);
           updateKpi(kpis, target, $container);
-        } else if (sub === "pendingdeposit") {
+        } else if (data.tab === "Pending Deposit") {
           updatePendingDeposit(kpis, target, $pendingDepositContainer);
-        } else if (sub === "pendingwithdraw") {
+        } else if (data.tab === "Pending Withdraw") {
           updatePendingWithdraw(kpis, target, $pendingWithdrawContainer);
         }
         const $logList = $("ul.space-y-2").empty();

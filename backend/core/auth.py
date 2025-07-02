@@ -34,17 +34,18 @@ NAV_LINKS = [
 
 def check_auth(request: Request, bypass_paths: list[str] = ["/"]):
     if request.url.path in bypass_paths:
-        return None  # Do NOT redirect from login or public paths
+        return None  # Allow public access
 
-    token = request.cookies.get("auth_token")
-    if not token:
+    session_cookie = request.cookies.get("session")
+    if not session_cookie:
         return RedirectResponse("/", status_code=302)
 
     try:
-        decoded = firebase_auth.verify_id_token(token)
+        # 🔐 Use session cookie instead of ID token
+        decoded = firebase_auth.verify_session_cookie(session_cookie, check_revoked=True)
         uid = decoded.get("uid")
-        user_doc = db.collection("users").document(uid).get()
 
+        user_doc = db.collection("users").document(uid).get()
         if not user_doc.exists:
             return RedirectResponse("/", status_code=302)
 
@@ -53,4 +54,3 @@ def check_auth(request: Request, bypass_paths: list[str] = ["/"]):
     except Exception as e:
         print(f"Auth error: {e}")
         return RedirectResponse("/", status_code=302)
-
