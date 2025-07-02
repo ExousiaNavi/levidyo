@@ -1,0 +1,178 @@
+<!-- frontend/templates/login.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[80dvh] bg-gray-100">
+  <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-md">
+    <h1 class="text-2xl font-bold text-center text-green-600 mb-1">Notification App</h1>
+    <p class="text-sm text-gray-600 text-center mb-6">Sign in to continue</p>
+
+    {% if error %}
+    <div class="mb-4 text-red-600 text-sm bg-red-100 border border-red-300 rounded px-4 py-2">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form id="loginForm" method="post" class="space-y-5">
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value="exousia.navi@auroramy.com"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          value="3tYfGWEwHzDTZ7S"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+        />
+      </div>
+
+      <div class="text-right">
+        <a href="#" id="forgotPasswordLink" class="text-sm text-green-600 hover:underline">Forgot Password?</a>
+      </div>
+
+      <input type="hidden" name="token" id="token" />
+      <button
+        type="submit"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+      >
+        Login
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Login Loader Overlay -->
+<div id="login-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-md hidden">
+  <div class="text-center">
+    <svg class="animate-spin h-10 w-10 text-green-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    <p class="text-sm text-green-700 font-medium">Signing in...</p>
+  </div>
+</div>
+
+
+<!-- Forgot Password Modal -->
+<div id="forgotModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg relative">
+    <h2 class="text-lg font-semibold mb-4">Reset Password</h2>
+    <form id="forgotForm" method="post">
+      <label for="resetEmail" class="block text-sm font-medium text-gray-700 mb-1">Enter your email address</label>
+      <input
+        type="email"
+        id="resetEmail"
+        name="resetEmail"
+        required
+        class="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+      />
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="closeModal" class="px-4 py-2 text-sm bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+        <button type="submit" class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('forgotModal');
+  const openModal = document.getElementById('forgotPasswordLink');
+  const closeModal = document.getElementById('closeModal');
+
+  openModal.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.classList.remove('hidden');
+  });
+
+  closeModal.addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+    }
+  });
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBl0GGJM0mZK_MtQNCS0GpkhvtpuDPIfMA",
+    authDomain: "bj-alert.firebaseapp.com",
+    projectId: "bj-alert",
+    storageBucket: "bj-alert.firebasestorage.app",
+    messagingSenderId: "149339289115",
+    appId: "1:149339289115:web:813c82d053e2cc4fa62abe",
+    measurementId: "G-C20NY0NXZM"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  // Forgot Password
+  const forgotForm = document.getElementById("forgotForm");
+
+  forgotForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("resetEmail").value;
+
+    try {
+      await firebase.auth().sendPasswordResetEmail(email);
+      alert("Password reset email sent! Check your inbox.");
+      document.getElementById("forgotModal").classList.add("hidden");
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  });
+  
+  
+  // Authentication
+  const loader = document.getElementById('login-loader');
+  const form = document.getElementById('loginForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.email.value;
+    const password = form.password.value;
+
+    loader.classList.remove('hidden'); // ⬅️ Show the loader
+
+    try {
+      const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+      const idToken = await userCred.user.getIdToken();
+
+      const formData = new FormData();
+      formData.append("token", idToken);
+
+      const response = await fetch("/login", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        const html = await response.text();
+        document.open();
+        document.write(html);
+        document.close();
+      }
+    } catch (err) {
+      loader.classList.add('hidden'); // ⬅️ Hide loader on error
+      alert("Login failed: " + err.message);
+    }
+  });
+</script>
+{% endblock %}

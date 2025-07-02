@@ -1,0 +1,28 @@
+notification-app/
+├── backend/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── config.py
+│   └── requirements.txt
+├── frontend/
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── styles.css
+│   │   ├── js/
+│   │   └── images/
+│   │       └── favicon.ico
+│   └── templates/
+│       ├── base.html
+│       ├── dashboard.html
+│       ├── deposits.html
+│       └── profile.html
+└── .gitignore
+
+uvicorn backend.main:app --reload
+uvicorn backend.main:app --host 192.168.100.173 --port 8000 --reload
+
+FIREBASE ACCOUNT
+EMAIL: exousia.navi@auroramy.com
+PASS: 3tYfGWEwHzDTZ7S
+
+ORIGINAL AMOUNT: 210000000
