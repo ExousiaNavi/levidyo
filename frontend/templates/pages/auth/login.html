@@ -28,26 +28,26 @@
       </div>
 
       <div class="relative">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="************"
-          required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none pr-10"
-        />
-        
-        <!-- Toggle Icon Button -->
-        <button
-          type="button"
-          id="togglePassword"
-          class="absolute top-9 right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
-          onclick="togglePassword()"
-        >
-          <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
-        </button>
-      </div>
+  <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+  
+  <input
+    type="password"
+    id="password"
+    name="password"
+    placeholder="************"
+    required
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none pr-10"
+  />
+
+  <!-- Toggle Button with Icon -->
+  <button
+    type="button"
+    id="togglePassword"
+    class="absolute top-9 right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+  >
+    <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
+  </button>
+</div>
 
       <div class="text-right">
         <a href="#" id="forgotPasswordLink" class="text-sm text-green-600 hover:underline">Forgot Password?</a>
@@ -102,21 +102,31 @@
   const openModal = document.getElementById('forgotPasswordLink');
   const closeModal = document.getElementById('closeModal');
 
+  let isPasswordVisible = false;
+
   function togglePassword() {
     const input = document.getElementById("password");
-    const icon = document.getElementById("eyeIcon");
-    
-    if (input.type === "password") {
-      input.type = "text";
-      icon.setAttribute("data-lucide", "eye-off");
-    } else {
-      input.type = "password";
-      icon.setAttribute("data-lucide", "eye");
-    }
+    const iconContainer = document.getElementById("eyeIcon");
 
-    lucide.createIcons(); // Refresh icon
+    isPasswordVisible = !isPasswordVisible;
+    input.type = isPasswordVisible ? "text" : "password";
+
+    // Replace icon element to toggle
+    const newIcon = document.createElement("i");
+    newIcon.setAttribute("id", "eyeIcon");
+    newIcon.setAttribute("data-lucide", isPasswordVisible ? "eye-off" : "eye");
+    newIcon.classList.add("w-5", "h-5");
+
+    iconContainer.replaceWith(newIcon);
+    lucide.createIcons(); // Refresh icon rendering
   }
-  
+
+  // Attach toggle on DOM load
+  window.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+    document.getElementById("togglePassword").addEventListener("click", togglePassword);
+  });
+
   openModal.addEventListener('click', (e) => {
     e.preventDefault();
     modal.classList.remove('hidden');
