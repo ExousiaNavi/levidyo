@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request, Query
 from backend.core.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -6,6 +7,10 @@ from backend.core.deposit import get_hourly_deposit_data
 from backend.core.amount import get_target_amount 
 from backend.filters.brand import get_all_brands, get_supported_currencies, get_default_currency
 router = APIRouter()
+
+date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+now = datetime.now(timezone.utc)
+formatted = now.strftime('%Y-%m-%d – %H:%M')
 
 @router.get("/api/dashboard-data")
 async def get_dashboard_data(
@@ -17,7 +22,10 @@ async def get_dashboard_data(
     
 ):
     try:
-        date = "2025-04-21"  # You can later make this dynamic
+        
+
+       
+        # date = "2025-04-21"  # You can later make this dynamic
         combined_key = f"{brand}_{currency}"
         data = get_hourly_deposit_data(date, combined_key, brand, table)
         target = get_target_amount()
@@ -60,7 +68,7 @@ async def dashboard(request: Request, brand: str = Query(default=None),
 
     # 5. Use brand_currency key
     key = f"{brand}_{currency}"
-    date = "2025-04-21"
+    # date = "2025-04-21"
     data = get_hourly_deposit_data(date, key, brand, sub)
     target_amount = get_target_amount()
 
@@ -73,7 +81,7 @@ async def dashboard(request: Request, brand: str = Query(default=None),
         "current_page": sub,
         "tab": tab,
         "user": user,
-        "current_datetime": "2025-04-21 – 22:00",
+        "current_datetime": formatted,
         "target": target_amount,
         "kpis": {
             "ld_deposit": 0,
