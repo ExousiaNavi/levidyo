@@ -9,8 +9,20 @@ from datetime import datetime, timezone
 from typing import Optional
 router = APIRouter()
 date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-now = datetime.now(timezone.utc)
-formatted = now.strftime('%Y-%m-%d – %H:%M')
+now = datetime.now()
+formatted = now.strftime('%Y-%m-%d %H:00')
+
+def getLabel(label):
+    if label == "deposit":
+        return "Deposit"
+    elif label == "withdraw":
+        return "Withdraw"
+    elif label == "pendingdeposit":
+        return "Pending Deposit"
+    elif label == "pendingwithdraw":
+        return "Pending Withdraw"
+    else:
+        return "Undefined"
 
 @router.get("/api/dashboard-data")
 async def get_dashboard_data(
@@ -22,35 +34,57 @@ async def get_dashboard_data(
     
 ):
     try:
-        # Use only cookies (cleaner URL)
-        # table
-        table = request.cookies.get("sub") or "deposit"
-        # Name
-        tab = request.cookies.get("name") or "Deposit"
-        print("This is the ajax request...")
-        print(table,tab)
+        # # Use only cookies (cleaner URL)
+        # # table
+        # table = request.cookies.get("sub") or "deposit"
+        # # Name
+        # tab = request.cookies.get("name") or "Deposit"
+        # print("This is the ajax request...")
+        # print(table,tab)
         
-        # Normalize table input
-        # if not table or table.strip().lower() == "null":
-        #     table = "deposit"
-        # print(table)
-        # date = "2025-04-21"  # You can later make this dynamic
-        combined_key = f"{brand}_{currency}"
-        data = get_hourly_deposit_data(date, combined_key, brand, table)
+        # # Normalize table input
+        # # if not table or table.strip().lower() == "null":
+        # #     table = "deposit"
+        # # print(table)
+        # # date = "2025-04-21"  # You can later make this dynamic
+        # combined_key = f"{brand}_{currency}"
+        # data = get_hourly_deposit_data(date, combined_key, brand, table)
+        # target = get_target_amount()
+
+        # return JSONResponse({
+        #     "tab": tab,
+        #     "kpis": data["kpis"],
+        #     "target": target,
+        #     "history_log": data["history_log"],  # optional if you plan to use it
+        #     "chart_hours": data["chart_hours"],
+        #     "today_values": data["today_values"],
+        #     "cumulative_values": data["cumulative_values"],
+        #     "last_day_values": data["last_day_values"],
+        #     "last_cumulative_values": data["last_cumulative_values"],
+        # })
+
+        tabs = ["deposit", "withdraw", "pendingdeposit", "pendingwithdraw"]
+        result = {}
         target = get_target_amount()
+        combined_key = f"{brand}_{currency}"
+        # for debug data
+        date = "2025-04-21"
+        for tab in tabs:
+            data = get_hourly_deposit_data(date, combined_key, brand, tab)
+            result[tab] = {
+                "tab": getLabel(tab),
+                "kpis": data["kpis"],
+                "target": target,
+                "history_log": data.get("history_log", []),
+                "chart_hours": data["chart_hours"],
+                "today_values": data["today_values"],
+                "cumulative_values": data["cumulative_values"],
+                "last_day_values": data["last_day_values"],
+                "last_cumulative_values": data["last_cumulative_values"],
+                "time": formatted
+            }
 
-        return JSONResponse({
-            "tab": tab,
-            "kpis": data["kpis"],
-            "target": target,
-            "history_log": data["history_log"],  # optional if you plan to use it
-            "chart_hours": data["chart_hours"],
-            "today_values": data["today_values"],
-            "cumulative_values": data["cumulative_values"],
-            "last_day_values": data["last_day_values"],
-            "last_cumulative_values": data["last_cumulative_values"],
-        })
-
+        return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 

@@ -22,9 +22,9 @@ NAV_LINKS = [
     "url": "#",
     "submenu": [
       {"name": "Deposit","tab":"deposit", "url": "/dashboard", "icon": "dollar-sign", "table": "deposit"},
-      {"name": "Withdraw","tab":"withdraw", "url": "/dashboard", "icon": "dollar-sign", "table": "withdraw"},
-      {"name": "Pending Deposit","tab":"pendingdeposit", "url": "/dashboard", "icon": "dollar-sign", "table": "pendingdeposit"},
-      {"name": "Pending Withdraw","tab":"pendingwithdraw", "url": "/dashboard","icon": "dollar-sign", "table": "pendingwithdraw"},
+    #   {"name": "Withdraw","tab":"withdraw", "url": "/dashboard", "icon": "dollar-sign", "table": "withdraw"},
+    #   {"name": "Pending Deposit","tab":"pendingdeposit", "url": "/dashboard", "icon": "dollar-sign", "table": "pendingdeposit"},
+    #   {"name": "Pending Withdraw","tab":"pendingwithdraw", "url": "/dashboard","icon": "dollar-sign", "table": "pendingwithdraw"},
       
     ]
   },

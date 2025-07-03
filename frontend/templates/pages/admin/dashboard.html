@@ -1,6 +1,10 @@
-{% extends "base.html" %} {% import 'pages/admin/components/card.html' as cards
-%} {% import 'pages/admin/components/deposit-chart.html' as charts %} {% block
-content %}
+{% extends "base.html" %} 
+{% import 'pages/admin/components/deposit-card.html' as depositCard %} 
+{% import 'pages/admin/components/withdraw-card.html' as withdrawCard %} 
+{% import 'pages/admin/components/pending-deposit-card.html' as pendingDepositCard %} 
+{% import 'pages/admin/components/pending-withdraw-card.html' as pendingWithdrawCard %} 
+<!-- {% import 'pages/admin/components/deposit-chart.html' as charts %}  -->
+{% block content %}
 
 <!-- Skeleton Loader -->
 <div id="skeleton-loader" class="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse p-4">
@@ -34,32 +38,59 @@ content %}
 </div>
 
 
-<div id="dashboard-content" class="hidden">
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto">
-    <!-- 🟢 Deposit Overview Card -->
-    <div id="deposit-card">
-      {{ cards.deposit_card(kpis, target, history_log, current_datetime, brands,
-      available_currencies) }}
+<!-- Dashboard Content Wrapper -->
+<div id="dashboard-content" class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
+  <div class="p-4 w-full bg-green-100 col-span-1 lg:col-span-2">
+    <h2 class="text-xl font-semibold text-gray-700">👋 Hello, {{ user.email }}</h2>
+  </div>
+  <!-- 🟢 Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Deposit Overview Card -->
+    <div id="deposit-card" class="h-full">
+      {{ depositCard.deposit_card(kpis, target, history_log, current_datetime, brands, available_currencies) }}
     </div>
 
-    <!-- 📈 Charts Section -->
-    <div id="charts" class="grid grid-cols-1 gap-3">
-      <!-- Hourly Chart Card -->
+    <!-- Charts Section -->
+    <!-- <div id="charts" class="grid grid-cols-1 gap-3">
       <div class="bg-white shadow rounded-lg p-4">
         <h3 class="text-sm font-medium text-gray-700 mb-2">Hourly Chart</h3>
         <canvas id="hourlyChart" class="w-full h-64"></canvas>
       </div>
 
-      <!-- Previous Day Chart Card -->
       <div id="prev-chart" class="bg-white shadow rounded-lg p-4">
-        <h3 class="text-sm font-medium text-gray-700 mb-2">
-          Previous Day Chart
-        </h3>
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Previous Day Chart</h3>
         <canvas id="previousDayChart" class="w-full h-64"></canvas>
       </div>
+    </div> -->
+
+  </div>
+
+  <!-- 🟢 Withdraw Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="withdraw-deposit-container" class="h-full">
+      {{ withdrawCard.withdraw_card(kpis, target, history_log, current_datetime, brands, available_currencies) }}
     </div>
   </div>
+
+  <!-- 🟢 Pending Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="pending-deposit-container" class="h-full">
+      {{ pendingDepositCard.pending_deposit_card() }}
+    </div>
+  </div>
+
+  <!-- 🟢 Pending Withdraw Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="pending-withdraw-deposit-container" class="h-full">
+      {{ pendingWithdrawCard.pending_withdraw_card() }}
+    </div>
+  </div>
+
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -73,8 +104,7 @@ content %}
     });
   }
 
-  function updatePendingWithdraw(kpis, target, $container) {
-    $("#pending-deposit-container").addClass("hidden")
+  function updatePendingWithdraw(kpis, target, $container, time) {
     const metrics = [
       {
         label: "Pending Wd. Amount",
@@ -98,18 +128,12 @@ content %}
         </div>
       `);
     });
-    $("#stats-container").hide();
-    $("#prev-chart").hide();
-    $("#target_progress_container").hide();
-    $("#td_deposit").text("");
-    $("#ld_cumulative").text("");
-    $("#lastd_deposit").text("");
+    $("#pw-time").text(time)
     const percentage = 0;
-    $("#progress-fill").animate({ width: `${percentage}%` }, 600);
+    $("#progress-fill-pending-wd").animate({ width: `${percentage}%` }, 600);
   }
 
-  function updatePendingDeposit(kpis, target, $container) {
-    $("#pending-withdraw-container").addClass("hidden")
+  function updatePendingDeposit(kpis, target, $container,time) {
     const metrics = [
       { label: "Pending Dp. Amount", value: kpis.total_pending_deposit_amount },
       { label: "Pending Dp. Count", value: kpis.total_pending_deposit_count },
@@ -130,14 +154,9 @@ content %}
         </div>
       `);
     });
-    $("#stats-container").hide();
-    $("#prev-chart").hide();
-    $("#target_progress_container").hide();
-    $("#td_deposit").text("");
-    $("#ld_cumulative").text("");
-    $("#lastd_deposit").text("");
     const percentage = 0;
-    $("#progress-fill").animate({ width: `${percentage}%` }, 600);
+    $("#progress-fill-deposit").animate({ width: `${percentage}%` }, 600);
+    $("#pdp-time").text(time)
   }
 
   function getBadgeClassAndArrow(delta) {
@@ -162,9 +181,7 @@ content %}
     return { svg, cssClass };
   }
 
-  function updateKpi(kpis, target, $container) {
-    $("#pending-withdraw-container").addClass("hidden")
-    $("#pending-deposit-container").addClass("hidden")
+  function updateDeposit(kpis, target, $container,time) {
     const metrics = [
       { label: "HDoD", value: kpis.hdod },
       { label: "HWoW", value: kpis.hwow },
@@ -185,11 +202,43 @@ content %}
         </div>
       `);
     });
+    $("#dp-time").text(time)
     $("#td_deposit").text(formatNumber(kpis.today_deposit));
     $("#ld_cumulative").text(formatNumber(kpis.ld_cumulative));
     $("#lastd_deposit").text(formatNumber(kpis.ld_deposit));
+    $("#target-amount").text(formatNumber(target));
     const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
     $("#progress-fill").animate({ width: `${percentage}%` }, 600);
+  }
+
+  function updateWithdraw(kpis, target, $container,time) {
+    const metrics = [
+      { label: "HDoD", value: kpis.hdod },
+      { label: "HWoW", value: kpis.hwow },
+      { label: "CDoD", value: kpis.cdod },
+      { label: "CWoW", value: kpis.cwow },
+    ];
+    metrics.forEach((metric) => {
+      const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      $container.append(`
+        <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4">${svg}</div>
+            <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
+          </div>
+          <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+            metric.label
+          }</div>
+        </div>
+      `);
+    });
+    $("#wd-time").text(time)
+    $("#td_withdraw_deposit").text(formatNumber(kpis.today_deposit));
+    $("#ld_withdraw_cumulative").text(formatNumber(kpis.ld_cumulative));
+    $("#lastd_withdraw_deposit").text(formatNumber(kpis.ld_deposit));
+    $("#target-withdraw-amount").text(formatNumber(target));
+    const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
+    $("#progress-fill-withdraw").animate({ width: `${percentage}%` }, 600);
   }
 
   function buildCharts(
@@ -302,6 +351,8 @@ content %}
     }
   }
 
+  
+  
   function updateDashboard(sub, tab) {
     console.log(sub, tab)
     // 🔄 Show skeleton, hide real dashboard content
@@ -313,34 +364,59 @@ content %}
     $.getJSON(
       `/api/dashboard-data?brand=${brand}&currency=${currency}&table=${sub}&tab=${tab}`,
       function (data) {
-        const kpis = data.kpis || {},
-          target = data.target || 1,
+        console.log(data)
+        const kpis = data.deposit.kpis || {},
+          target = data.deposit.target || 1,
           history = data.history_log || [];
         const width = ((kpis.today_deposit / target) * 100).toFixed(2);
-        $("#progress-bar").width(`${width}%`);
-        $("h2").text(`${data.tab} – ${brand.toUpperCase()}`);
-        buildCharts(
-          data.chart_hours,
-          data.today_values,
-          data.cumulative_values,
-          data.last_day_values,
-          data.last_cumulative_values
-        );
-        let $container = $("#kpi-container").empty();
-        let $pendingDepositContainer = $("#pending-deposit-container").empty();
-        let $pendingWithdrawContainer = $(
-          "#pending-withdraw-container"
-        ).empty();
-        if (data.tab === "Deposit" || data.tab === "Withdraw") {
-          console.log(data.tab);
-          updateKpi(kpis, target, $container);
-        } else if (data.tab === "Pending Deposit") {
-          updatePendingDeposit(kpis, target, $pendingDepositContainer);
-        } else if (data.tab === "Pending Withdraw") {
-          updatePendingWithdraw(kpis, target, $pendingWithdrawContainer);
-        }
-        const $logList = $("ul.space-y-2").empty();
-        updateHistory(history, $logList, sub);
+        //$("#progress-bar").width(`${width}%`);
+
+        $("#dp-title").text(`${data.deposit.tab.toUpperCase()}`);
+        $("#withdraw-title").text(`${data.pendingdeposit.tab.toUpperCase()}`);
+        //$("#pdp-title").text(`${data.pendingdeposit.tab.toUpperCase()} – ${brand.toUpperCase()}`);
+        //buildCharts(
+         // data.chart_hours,
+         // data.today_values,
+         // data.cumulative_values,
+         // data.last_day_values,
+         // data.last_cumulative_values
+        //);
+
+        //for deposit card
+        let $depositContainer = $("#deposit-container").empty();
+        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time);
+
+        //for withdraw card
+         let $withdrawContainer = $("#withdraw-container").empty();
+        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time);
+
+        let $pendingDepositContainer = $("#pending-deposit-card").empty();
+        updatePendingDeposit(
+          data.pendingdeposit.kpis || {}, 
+          data.pendingdeposit.target, 
+          $pendingDepositContainer,
+          data.pendingdeposit.time);
+
+        let $pendingWithdrawContainer = $("#pending-withdraw-card").empty();
+        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time);
+
+        //let $pendingWithdrawContainer = $(
+        //  "#pending-withdraw-container"
+        //).empty();
+
+
+
+        //if (data.tab === "Deposit" || data.tab === "Withdraw") {
+        //  console.log(data.tab);
+        //  updateDeposit(kpis, target, $depositContainer);
+        //} else if (data.tab === "Pending Deposit") {
+        //  updatePendingDeposit(kpis, target, $pendingDepositContainer);
+        //} else if (data.tab === "Pending Withdraw") {
+        //  updatePendingWithdraw(kpis, target, $pendingWithdrawContainer);
+        //}
+
+        //const $logList = $("ul.space-y-2").empty();
+        //updateHistory(history, $logList, sub);
 
         // ✅ Fade out loader and show actual dashboard
         $("#skeleton-loader").fadeOut(200, function () {
