@@ -28,9 +28,17 @@
   <!-- Filters (Brand, Currency) -->
   <div class="flex justify-between items-center gap-2 w-full">
     <h2 id="withdraw-title" class="text-lg font-bold text-green-700 uppercase">Withdraw – {{ kpis.brand or 'BJ' }}</h2>
-    <div class="flex gap-2 items-center">
-        <button class="text-gray-400 hover:text-gray-600" title="Refresh" onclick="location.reload()">
-        <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
+    <div class="flex gap-2 items-center w-fit">
+
+        <button data-id="2" class="history-btn text-gray-400 hover:text-gray-600 w-full flex items-center gap-1" title="History" type="button">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>History</span>
+        </button>
+
+        <span class="text-gray-400">|</span>
+        <button class="text-gray-400 hover:text-gray-600 w-full flex items-center gap-1" title="Refresh" onclick="location.reload()">
+        <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+          <span>Refresh</span>
         </button>
     </div>
   </div>

@@ -68,7 +68,7 @@ async def get_dashboard_data(
         target = get_target_amount()
         combined_key = f"{brand}_{currency}"
         # for debug data
-        date = "2025-04-21"
+        # date = "2025-06-16"
         for tab in tabs:
             data = get_hourly_deposit_data(date, combined_key, brand, tab)
             result[tab] = {

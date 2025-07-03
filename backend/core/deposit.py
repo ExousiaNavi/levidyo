@@ -1,6 +1,8 @@
 # backend/core/deposit.py
-
+from datetime import datetime, timezone
 from backend.core.firebase import db
+now = datetime.now()
+formatted = now.strftime('%Y-%m-%d')
 
 #for deposit
 def refactor_deposit_data(docs, brand):
@@ -46,12 +48,22 @@ def refactor_deposit_data(docs, brand):
         hwow = data.get("hwow", hwow)
 
         history_log.append({
-            "time": f"{hour}:00",
-            "amount": today_deposit,
-            "hdod": hdod,
-            "hwow": hwow,
-            "cdod": cdod,
-            "cwow": cwow
+            "chart_hours": chart_hours,
+            "today_values": today_values,
+            "cumulative_values": cumulative_values,
+            "last_day_values": last_day_values,
+            "last_cumulative_values": last_cumulative_values,
+            "time": formatted+" "+hour+":"+"00",
+            "kpis": {
+                "ld_deposit": ld_deposit,
+                "ld_cumulative": ld_cumulative,
+                "cdod": cdod,
+                "cwow": cwow,
+                "hdod": hdod,
+                "hwow": hwow,
+                "today_deposit": total_today_deposit,
+                "today_cumulative": total_today_cumulative,
+            }
         })
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
@@ -178,10 +190,25 @@ def refactor_pending_deposit(docs, brand):
         total_pending_count += pending_count
 
         history_log.append({
-            "time": f"{hour}:00",
-            "amount": pending_amount,
-            "count": pending_count,
-            "avg_time": data.get("avg_pending_time", "N/A")
+            "time": formatted+" "+hour+":"+"00",
+            "chart_hours": chart_hours,
+            "today_values": today_values,
+            "cumulative_values": [],
+            "last_day_values": [],
+            "last_cumulative_values": [],
+            "kpis": {
+                "ld_deposit": 0,
+                "ld_cumulative": 0,
+                "cdod": 0,
+                "cwow": 0,
+                "hdod": 0,
+                "hwow": 0,
+                "today_deposit": 0,
+                "today_cumulative": 0,
+                "total_pending_deposit_amount": total_pending_amount,
+                "total_pending_deposit_count": total_pending_count,
+                "average_pending_time": average_pending_time
+            }
         })
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
@@ -239,10 +266,25 @@ def refactor_pending_withdraw(docs, brand):
         total_pending_count += pending_count
 
         history_log.append({
-            "time": f"{hour}:00",
-            "amount": pending_amount,
-            "count": pending_count,
-            "avg_time": data.get("avg_pending_time", "N/A")
+            "time": formatted+" "+hour+":"+"00",
+            "chart_hours": chart_hours,
+            "today_values": today_values,
+            "cumulative_values": [],
+            "last_day_values": [],
+            "last_cumulative_values": [],
+            "kpis": {
+                "ld_deposit": 0,
+                "ld_cumulative": 0,
+                "cdod": 0,
+                "cwow": 0,
+                "hdod": 0,
+                "hwow": 0,
+                "today_deposit": 0,
+                "today_cumulative": 0,
+                "total_pending_withdraw_amount": total_pending_amount,
+                "total_pending_withdraw_count": total_pending_count,
+                "average_pending_time": average_pending_time
+            }
         })
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
