@@ -72,6 +72,8 @@ async def get_dashboard_data(
         for tab in tabs:
             data = get_hourly_deposit_data(date, combined_key, brand, tab)
             result[tab] = {
+                "brand":data["brand"],
+                "currency":data["currency"],
                 "tab": getLabel(tab),
                 "kpis": data["kpis"],
                 "target": target,

@@ -825,21 +825,21 @@ function formatNumber(value, currency) {
 
         //for deposit card
         let $depositContainer = $("#deposit-container").empty();
-        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time, brand, currency);
+        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time, data.deposit.brand, data.deposit.currency);
 
         //for withdraw card
          let $withdrawContainer = $("#withdraw-container").empty();
-        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time,brand, currency);
+        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time,data.deposit.brand, data.deposit.currency);
 
         let $pendingDepositContainer = $("#pending-deposit-card").empty();
         updatePendingDeposit(
           data.pendingdeposit.kpis || {}, 
           data.pendingdeposit.target, 
           $pendingDepositContainer,
-          data.pendingdeposit.time,brand, currency);
+          data.pendingdeposit.time,data.deposit.brand, data.deposit.currency);
 
         let $pendingWithdrawContainer = $("#pending-withdraw-card").empty();
-        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time,brand, currency);
+        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time,data.deposit.brand, data.deposit.currency);
 
         //const $logList = $("ul.space-y-2").empty();
         //updateHistory(history, $logList, sub);
