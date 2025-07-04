@@ -5,7 +5,7 @@ now = datetime.now()
 formatted = now.strftime('%Y-%m-%d')
 
 #for deposit
-def refactor_deposit_data(docs, brand):
+def refactor_deposit_data(docs, brand,currency):
     chart_hours = []
     today_values = []
     cumulative_values = []
@@ -47,12 +47,16 @@ def refactor_deposit_data(docs, brand):
         hdod = data.get("hdod", hdod)
         hwow = data.get("hwow", hwow)
 
+        br, curr = currency.split("_")
+        
         history_log.append({
             "chart_hours": chart_hours,
             "today_values": today_values,
             "cumulative_values": cumulative_values,
             "last_day_values": last_day_values,
             "last_cumulative_values": last_cumulative_values,
+            "brand":brand,
+            "currency":curr,
             "time": formatted+" "+hour+":"+"00",
             "kpis": {
                 "ld_deposit": ld_deposit,
@@ -69,6 +73,8 @@ def refactor_deposit_data(docs, brand):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
+        "brand":brand,
+        "currency":currency,
         "chart_hours": chart_hours,
         "today_values": today_values,
         "cumulative_values": cumulative_values,
@@ -88,7 +94,7 @@ def refactor_deposit_data(docs, brand):
     }
 
 #for withdraw
-def refactor_withdraw_data(docs, brand):
+def refactor_withdraw_data(docs, brand, currency):
     chart_hours = []
     today_values = []
     cumulative_values = []
@@ -129,19 +135,35 @@ def refactor_withdraw_data(docs, brand):
         cwow = data.get("cwow", cwow)
         hdod = data.get("hdod", hdod)
         hwow = data.get("hwow", hwow)
+        
+        br, curr = currency.split("_")
 
         history_log.append({
-            "time": f"{hour}:00",
-            "amount": today_deposit,
-            "hdod": hdod,
-            "hwow": hwow,
-            "cdod": cdod,
-            "cwow": cwow
+            "brand":brand,
+            "currency":curr,
+            "time": formatted+" "+hour+":"+"00",
+            "chart_hours": chart_hours,
+            "today_values": today_values,
+            "cumulative_values": cumulative_values,
+            "last_day_values": last_day_values,
+            "last_cumulative_values": last_cumulative_values,
+            "kpis": {
+                "ld_deposit": ld_deposit,
+                "ld_cumulative": ld_cumulative,
+                "cdod": cdod,
+                "cwow": cwow,
+                "hdod": hdod,
+                "hwow": hwow,
+                "today_deposit": total_today_deposit,
+                "today_cumulative": total_today_cumulative,
+            }
         })
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
+        "brand":brand,
+        "currency":currency,
         "chart_hours": chart_hours,
         "today_values": today_values,
         "cumulative_values": cumulative_values,
@@ -161,7 +183,7 @@ def refactor_withdraw_data(docs, brand):
     }
 
 #for pending deposits
-def refactor_pending_deposit(docs, brand):
+def refactor_pending_deposit(docs, brand, currency):
     chart_hours = []
     today_values = []
     history_log = []
@@ -190,6 +212,8 @@ def refactor_pending_deposit(docs, brand):
         total_pending_count += pending_count
 
         history_log.append({
+            "brand":brand,
+            "currency":currency,
             "time": formatted+" "+hour+":"+"00",
             "chart_hours": chart_hours,
             "today_values": today_values,
@@ -214,6 +238,8 @@ def refactor_pending_deposit(docs, brand):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
+        "brand":brand,
+        "currency":currency,
         "chart_hours": chart_hours,
         "today_values": today_values,
         "cumulative_values": [],
@@ -237,7 +263,7 @@ def refactor_pending_deposit(docs, brand):
     }
 
 #for pending withdraw
-def refactor_pending_withdraw(docs, brand):
+def refactor_pending_withdraw(docs, brand, currency):
     chart_hours = []
     today_values = []
     history_log = []
@@ -266,6 +292,8 @@ def refactor_pending_withdraw(docs, brand):
         total_pending_count += pending_count
 
         history_log.append({
+            "brand":brand,
+            "currency":currency,
             "time": formatted+" "+hour+":"+"00",
             "chart_hours": chart_hours,
             "today_values": today_values,
@@ -317,10 +345,10 @@ def get_hourly_deposit_data(date: str, currency: str, brand: str, table: str):
     hourly_ref = db.collection(table).document(date).collection(currency)
     docs = list(hourly_ref.stream())
     if table == 'deposit':
-        return refactor_deposit_data(docs, brand)
+        return refactor_deposit_data(docs, brand, currency)
     elif table == 'withdraw':
-        return refactor_withdraw_data(docs, brand)
+        return refactor_withdraw_data(docs, brand, currency)
     elif table == 'pendingdeposit':
-        return refactor_pending_deposit(docs, brand)
+        return refactor_pending_deposit(docs, brand, currency)
     else:
-        return refactor_pending_withdraw(docs, brand)
+        return refactor_pending_withdraw(docs, brand, currency)

@@ -55,9 +55,9 @@
 
 <!-- Dashboard Content Wrapper -->
 <div id="dashboard-content" class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
-  <div class="p-4 w-full bg-green-100 col-span-1 lg:col-span-2">
+  <!-- <div class="p-4 w-full bg-green-100 col-span-1 lg:col-span-2">
     <h2 class="text-xl font-semibold text-gray-700">👋 Hello, {{ user.email }}</h2>
-  </div>
+  </div> -->
   <!-- 🟢 Deposit Section -->
   <div class="flex flex-col gap-3 h-full">
     <!-- Deposit Overview Card -->
@@ -113,14 +113,45 @@
 <script>
   let hourlyChart, previousDayChart;
 
-  function formatNumber(value, minDigits = 2, maxDigits = 2) {
-    return Number(value).toLocaleString(undefined, {
-      minimumFractionDigits: minDigits,
-      maximumFractionDigits: maxDigits,
-    });
-  }
+function formatNumber(value, currency) {
+  const currencySymbols = {
+    PKR: '₨',
+    BDT: '৳',
+    INR: '₹',
+  };
 
-  function updatePendingWithdraw(kpis, target, $container, time) {
+  const currencyLocaleMap = {
+    PKR: 'en-PK',
+    BDT: 'en-BD',
+    INR: 'en-IN',
+  };
+
+  const upperCurrency = String(currency || '').toUpperCase();
+  const symbol = currencySymbols[upperCurrency] || '';
+  const locale = currencyLocaleMap[upperCurrency] || 'en-US';
+
+  const formattedNumber = Number(value).toLocaleString(locale, {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return {
+    symbol,          // e.g., "৳"
+    value: formattedNumber, // e.g., "132,508,423.31"
+    currency: upperCurrency // e.g., "BDT"
+  };
+}
+
+
+
+
+
+
+
+
+
+  function updatePendingWithdraw(kpis, target, $container, time,brand, currency) {
     const metrics = [
       {
         label: "Pending Wd. Amount",
@@ -131,11 +162,12 @@
     ];
     metrics.forEach((metric) => {
       const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      let val = formatNumber(metric.value, currency)
       $container.append(`
         <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold">${
-              formatNumber(metric.value) ?? 0
+              val.value ?? 0
             }</span>
           </div>
           <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
@@ -149,7 +181,7 @@
     $("#progress-fill-pending-wd").animate({ width: `${percentage}%` }, 600);
   }
 
-  function updatePendingDeposit(kpis, target, $container,time) {
+  function updatePendingDeposit(kpis, target, $container,time,brand, currency) {
     const metrics = [
       { label: "Pending Dp. Amount", value: kpis.total_pending_deposit_amount },
       { label: "Pending Dp. Count", value: kpis.total_pending_deposit_count },
@@ -157,11 +189,12 @@
     ];
     metrics.forEach((metric) => {
       const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      let val = formatNumber(metric.value, currency)
       $container.append(`
         <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold">${
-              formatNumber(metric.value) ?? 0
+              val.value ?? 0
             }</span>
           </div>
           <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
@@ -197,7 +230,7 @@
     return { svg, cssClass };
   }
 
-  function updateDeposit(kpis, target, $container,time) {
+  function updateDeposit(kpis, target, $container,time, brand, currency) {
     const metrics = [
       { label: "HDoD", value: kpis.hdod },
       { label: "HWoW", value: kpis.hwow },
@@ -219,15 +252,26 @@
       `);
     });
     $("#dp-time").text(time)
-    $("#td_deposit").text(formatNumber(kpis.today_deposit));
-    $("#ld_cumulative").text(formatNumber(kpis.ld_cumulative));
-    $("#lastd_deposit").text(formatNumber(kpis.ld_deposit));
-    $("#target-amount").text(formatNumber(target));
+    const today = formatNumber(kpis.today_deposit, currency);
+    const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
+    const lastd = formatNumber(kpis.ld_deposit, currency);
+    const targetAmount = formatNumber(target, currency);
+
+    $("#td_deposit .value").text(today.value);
+    $("#td_deposit .symbol").text(today.symbol);
+
+    $("#ld_cumulative .value").text(ldCumulative.value);
+    $("#ld_cumulative .symbol").text(ldCumulative.symbol);
+
+    $("#lastd_deposit .value").text(lastd.value);
+    //$("#lastd_deposit .symbol").text(lastd.symbol);
+
+    $("#target-amount").text(targetAmount.value);
     const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
     $("#progress-fill").animate({ width: `${percentage}%` }, 600);
   }
 
-  function updateWithdraw(kpis, target, $container,time) {
+  function updateWithdraw(kpis, target, $container,time,brand, currency) {
     const metrics = [
       { label: "HDoD", value: kpis.hdod },
       { label: "HWoW", value: kpis.hwow },
@@ -248,13 +292,22 @@
         </div>
       `);
     });
+    const today = formatNumber(kpis.today_deposit, currency);
+    const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
+    const lastd = formatNumber(kpis.ld_deposit, currency);
+
     $("#wd-time").text(time)
-    $("#td_withdraw_deposit").text(formatNumber(kpis.today_deposit));
-    $("#ld_withdraw_cumulative").text(formatNumber(kpis.ld_cumulative));
-    $("#lastd_withdraw_deposit").text(formatNumber(kpis.ld_deposit));
-    $("#target-withdraw-amount").text(formatNumber(target));
-    const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
-    $("#progress-fill-withdraw").animate({ width: `${percentage}%` }, 600);
+
+    $("#td_withdraw_deposit .value").text(today.value);
+    $("#td_withdraw_deposit .symbol").text(today.symbol);
+
+    $("#ld_withdraw_cumulative .value").text(ldCumulative.value);
+    $("#ld_withdraw_cumulative .symbol").text(ldCumulative.symbol);
+
+    $("#lastd_withdraw_deposit").text(lastd.value);
+    //$("#target-withdraw-amount").text(formatNumber(target));
+    //const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
+    //$("#progress-fill-withdraw").animate({ width: `${percentage}%` }, 600);
   }
 
   function buildCharts(
@@ -369,7 +422,7 @@
 
   
   //history process
-  function updateDepositHistory(target, histories, targetElement) {
+  function updateDepositHistory(target, histories, targetElement,brand, currency) {
     let dp_card_holder = ''
     let dp_card = ''
 
@@ -416,7 +469,10 @@
             </div>
           `;
       });
-
+      let history_deposit = formatNumber(history.kpis.today_deposit, history.currency)
+      let history_cum = formatNumber(history.kpis.today_deposit, history.currency)
+      let history_last = formatNumber(history.kpis.ld_deposit, history.currency)
+      let history_target = formatNumber(target, history.currency)
       dp_card_holder += `
           <div id="dp-sub" class="flex flex-col gap-3 h-full">
             <div class="h-full">
@@ -430,12 +486,24 @@
                   </div>
 
                   <!-- Stats -->
-                  <div class="">
-                    <div class="text-xs text-gray-600 flex gap-4 mt-1">
-                      <span>Hourly Dp. <strong class="text-gray-900">${formatNumber(history.kpis.today_deposit)}</strong></span>
-                      <span>Cum. Dp. <strong class="text-gray-900">${formatNumber(history.kpis.ld_cumulative)}</strong></span>
+                  <div class="" id="stats-deposit-container">
+                    <div class="text-xs text-gray-600 flex items-center gap-4 mt-1">
+                      <span>Hourly Dp. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_deposit.symbol}</span>
+                          <span class="value">${history_deposit.value}</span>
+                        </strong>
+                      </span>
+                      <span>Cum. Dp. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_cum.symbol}</span>
+                          <span class="value">${history_cum.value}</span>
+                        </strong>
+                      </span>
                     </div>
                   </div>
+
+                  
 
                 </div>
 
@@ -447,12 +515,12 @@
                   <!-- Target Progress -->
                   <div class="space-y-1 text-xs">
                     <div class="flex justify-between">
-                      <span>Last Day Dp. <strong class="text-gray-800">${formatNumber(history.kpis.ld_deposit)}</strong></span>
+                      <span>Last Day Dp. <strong class="text-gray-800">${history_last.value}</strong></span>
                     </div>
 
                     <div class="flex justify-between text-gray-600">
                       <span>Target:</span>
-                      <span class="font-semibold text-gray-800">${formatNumber(target)}</span>
+                      <span class="font-semibold text-gray-800">${history_target.value}</span>
                     </div>
 
                     <div class="border rounded-full bg-gray-100">
@@ -473,7 +541,7 @@
     targetElement.html(dp_card_holder)
   }
   
-  function updateWithdrawHistory(target, histories, targetElement) {
+  function updateWithdrawHistory(target, histories, targetElement,brand, currency) {
     console.log("ginagawa...");
     let dp_card_holder = '';
 
@@ -520,6 +588,11 @@
         `;
       });
 
+      let history_deposit = formatNumber(history.kpis.today_deposit, history.currency)
+      let history_cum = formatNumber(history.kpis.today_deposit, history.currency)
+      let history_last = formatNumber(history.kpis.ld_deposit, history.currency)
+      let history_target = formatNumber(target, history.currency)
+
       dp_card_holder += `
         <div id="wd-sub" class="flex flex-col gap-3 h-full">
           <div class="h-full">
@@ -531,10 +604,22 @@
                 </div>
 
                 <!-- Stats -->
-                <div class="text-xs text-gray-600 flex gap-4 mt-1">
-                  <span>Hourly Dp. <strong class="text-gray-900">${formatNumber(history.kpis.today_deposit)}</strong></span>
-                  <span>Cum. Dp. <strong class="text-gray-900">${formatNumber(history.kpis.ld_cumulative)}</strong></span>
-                </div>
+                  <div class="" id="stats-deposit-container">
+                    <div class="text-xs text-gray-600 flex items-center gap-4 mt-1">
+                      <span>Hourly Wd. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_deposit.symbol}</span>
+                          <span class="value">${history_deposit.value}</span>
+                        </strong>
+                      </span>
+                      <span>Cum. Wd. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_cum.symbol}</span>
+                          <span class="value">${history_cum.value}</span>
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
               </div>
 
               <!-- Metric Cards -->
@@ -545,12 +630,12 @@
               <!-- Target Progress -->
               <div class="space-y-1 text-xs">
                 <div class="flex justify-between">
-                  <span>Last Day Dp. <strong class="text-gray-800">${formatNumber(history.kpis.ld_deposit)}</strong></span>
+                  <span>Last Day Wd. <strong class="text-gray-800">${history_last.value}</strong></span>
                 </div>
 
                 <div class="flex justify-between text-gray-600">
                   <span>Target:</span>
-                  <span class="font-semibold text-gray-800">${formatNumber(target)}</span>
+                  <span class="font-semibold text-gray-800">${history_target.value}</span>
                 </div>
 
                 <div class="border rounded-full bg-gray-100">
@@ -570,7 +655,7 @@
     targetElement.html(dp_card_holder);
   }
 
-  function updatePendingWithdrawHistory(target, histories, targetElement) {
+  function updatePendingWithdrawHistory(target, histories, targetElement,brand, currency) {
     let dp_card_holder = '';
     let dp_card = ''
     // ✅ If no history, show default card
@@ -604,11 +689,12 @@
 
       metrics.forEach((metric) => {
         const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+         let history_val = formatNumber(metric.value, currency)
         dp_card += `
           <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold">${
-                formatNumber(metric.value) ?? 0
+                history_val.value ?? 0
               }</span>
             </div>
             <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
@@ -642,7 +728,7 @@
     targetElement.html(dp_card_holder)
   }
 
-  function updatePendingDepositHistory(target, histories, targetElement) {
+  function updatePendingDepositHistory(target, histories, targetElement,brand, currency) {
     let dp_card_holder = '';
     let dp_card = ''
     // ✅ If no history, show default card
@@ -676,11 +762,12 @@
 
       metrics.forEach((metric) => {
         const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+        let history_val = formatNumber(metric.value, currency)
         dp_card += `
           <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold">${
-                formatNumber(metric.value) ?? 0
+                history_val.value ?? 0
               }</span>
             </div>
             <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
@@ -738,21 +825,21 @@
 
         //for deposit card
         let $depositContainer = $("#deposit-container").empty();
-        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time);
+        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time, brand, currency);
 
         //for withdraw card
          let $withdrawContainer = $("#withdraw-container").empty();
-        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time);
+        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time,brand, currency);
 
         let $pendingDepositContainer = $("#pending-deposit-card").empty();
         updatePendingDeposit(
           data.pendingdeposit.kpis || {}, 
           data.pendingdeposit.target, 
           $pendingDepositContainer,
-          data.pendingdeposit.time);
+          data.pendingdeposit.time,brand, currency);
 
         let $pendingWithdrawContainer = $("#pending-withdraw-card").empty();
-        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time);
+        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time,brand, currency);
 
         //const $logList = $("ul.space-y-2").empty();
         //updateHistory(history, $logList, sub);
