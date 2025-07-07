@@ -11,7 +11,7 @@ from backend.core.whitelist import restrict_ip_middleware  # available ip
 app = FastAPI(title=settings.APP_NAME)
 
 # Register IP restriction middleware
-# app.middleware("http")(restrict_ip_middleware)
+app.middleware("http")(restrict_ip_middleware)
 
 # Static & Template paths
 BASE_DIR = Path(__file__).resolve().parent.parent
