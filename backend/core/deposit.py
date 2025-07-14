@@ -1,9 +1,26 @@
 # backend/core/deposit.py
 from datetime import datetime, timezone, timedelta
 from backend.core.firebase import db
-now = datetime.now()
-now_minus_1h = now - timedelta(hours=1)
-formatted = now.strftime('%Y-%m-%d')
+from zoneinfo import ZoneInfo      # Python 3.9+
+
+
+MANILA = ZoneInfo("Asia/Manila")
+
+now_manila = datetime.now(MANILA)                      # (1) actual local time
+rounded_now = now_manila.replace(minute=0, second=0, microsecond=0)
+one_hour_ago = rounded_now - timedelta(hours=1)        # (2) 1 h back, on the hour
+formatted = one_hour_ago.strftime('%Y-%m-%d')
+
+print("now_manila     :", now_manila)
+print("now_manila_H     :", one_hour_ago.hour)
+print("rounded_now    :", rounded_now)
+print("one_hour_ago   :", one_hour_ago)  
+print("foramtted   :", formatted)  
+# 3) string with minutes always “00”
+# utc_string = one_hour_ago.strftime("%Y-%m-%d %H:%M")   # e.g. "2025-07-13 23:00"
+
+# force minutes, seconds, microseconds to zero
+# one_hour_ago = one_hour_ago.replace(minute=0, second=0, microsecond=0)
 
 #for deposit
 def refactor_deposit_data(docs, brand,currency):
@@ -46,8 +63,10 @@ def refactor_deposit_data(docs, brand,currency):
         chart_hours.append(f"{hour}:00")
         today_deposit = data.get("today_deposit", 0)
         cumulative = data.get("today_cumulative", 0)
+        print("THis is depo: ")
+        print(one_hour_ago.hour)
+        if one_hour_ago.hour == int(hour):
 
-        if now_minus_1h.hour == int(hour):
             print(f"Need to display: {hour}")
             print(data)
             curent_time = f"{formatted} {hour}:00"
@@ -99,7 +118,8 @@ def refactor_deposit_data(docs, brand,currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
+       **({"curent_time": f"{formatted} {one_hour_ago.hour}:00"}
+       if curent_time == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
@@ -160,7 +180,7 @@ def refactor_withdraw_data(docs, brand, currency):
         today_deposit = data.get("today_withdraw", 0)
         cumulative = data.get("today_cumulative", 0)
 
-        if now_minus_1h.hour == int(hour):
+        if one_hour_ago.hour == int(hour):
             # print(f"Need to display: {hour}")
             # print(data)
             curent_time = f"{formatted} {hour}:00"
@@ -214,7 +234,8 @@ def refactor_withdraw_data(docs, brand, currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
+         **({"curent_time": f"{formatted} {one_hour_ago.hour}:00"}
+       if curent_time == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
@@ -257,7 +278,7 @@ def refactor_pending_deposit(docs, brand, currency):
         hour = doc.id
         chart_hours.append(f"{hour}:00")
 
-        if now_minus_1h.hour == int(hour):
+        if one_hour_ago.hour == int(hour):
             print(f"Need to display: {hour}")
             print(data)
             curent_time = f"{formatted} {hour}:00"
@@ -304,10 +325,10 @@ def refactor_pending_deposit(docs, brand, currency):
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
-    print(curent_time)
+    print(one_hour_ago.hour, f"{formatted} {one_hour_ago.hour}:00")
     return {
-         # include this key only at midnight, with the custom value
-        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
+        **({"curent_time": f"{formatted} {one_hour_ago.hour}:00"}
+        if curent_time == 0 else {}),
         # "curent_time": curent_time,
         "brand":brand,
         "currency":curr,
@@ -355,7 +376,7 @@ def refactor_pending_withdraw(docs, brand, currency):
         hour = doc.id
         chart_hours.append(f"{hour}:00")
 
-        if now_minus_1h.hour == int(hour):
+        if one_hour_ago.hour == int(hour):
             # print(f"Need to display: {hour}")
             # print(data)
             curent_wtime = f"{formatted} {hour}:00"
@@ -402,7 +423,8 @@ def refactor_pending_withdraw(docs, brand, currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_wtime == 0 else {}),
+        **({"curent_time": f"{formatted} {one_hour_ago.hour}:00"}
+        if curent_wtime == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
