@@ -1,13 +1,16 @@
-{% extends "base.html" %} 
-{% import 'pages/admin/components/deposit-card.html' as depositCard %} 
-{% import 'pages/admin/components/withdraw-card.html' as withdrawCard %} 
-{% import 'pages/admin/components/pending-deposit-card.html' as pendingDepositCard %} 
-{% import 'pages/admin/components/pending-withdraw-card.html' as pendingWithdrawCard %}
+{% extends "base.html" %} {% import 'pages/admin/components/deposit-card.html'
+as depositCard %} {% import 'pages/admin/components/withdraw-card.html' as
+withdrawCard %} {% import 'pages/admin/components/pending-deposit-card.html' as
+pendingDepositCard %} {% import
+'pages/admin/components/pending-withdraw-card.html' as pendingWithdrawCard %}
 <!-- {% import 'pages/admin/components/deposit-chart.html' as charts %}  -->
 {% block content %}
 
 <!-- Skeleton Loader -->
-<div id="skeleton-loader" class="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse p-4">
+<div
+  id="skeleton-loader"
+  class="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse p-4"
+>
   <!-- Left: Deposit Overview Placeholder -->
   <div class="space-y-4">
     <!-- Title Placeholder -->
@@ -26,11 +29,15 @@
 
   <!-- Right: Charts Placeholder -->
   <div class="space-y-4">
-    <div class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center">
+    <div
+      class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center"
+    >
       <div class="h-6 w-1/4 bg-gray-300 rounded mb-2"></div>
       <div class="h-40 w-11/12 bg-gray-300 rounded"></div>
     </div>
-    <div class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center">
+    <div
+      class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center"
+    >
       <div class="h-6 w-1/4 bg-gray-300 rounded mb-2"></div>
       <div class="h-40 w-11/12 bg-gray-300 rounded"></div>
     </div>
@@ -39,22 +46,36 @@
 
 <!-- History Content -->
 <div id="dashboard-content-history" class="hidden">
-    <div class="p-4 w-full bg-green-100 flex items-center gap-2">
-      <button id="back_btn" class="text-gray-600 hover:text-gray-800">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
-      </button>
-      <h2 class="text-xl font-semibold text-gray-700">History</h2>
-    </div>
+  <div class="p-4 w-full bg-green-100 flex items-center gap-2">
+    <button id="back_btn" class="text-gray-600 hover:text-gray-800">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </button>
+    <h2 class="text-xl font-semibold text-gray-700">History</h2>
+  </div>
 
-
-    <div id="dp-history-parent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"></div>
-    <div id="wp-history-parent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"></div>
-    <div id="pwp-history-parent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"></div>
-    <div id="pdp-history-parent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"></div>
+  <div
+    id="dp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="wp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="pwp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="pdp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
 </div>
 
 <!-- Dashboard Content Wrapper -->
-<div id="dashboard-content" class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
+<div
+  id="dashboard-content"
+  class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+>
   <!-- <div class="p-4 w-full bg-green-100 col-span-1 lg:col-span-2">
     <h2 class="text-xl font-semibold text-gray-700">👋 Hello, {{ user.email }}</h2>
   </div> -->
@@ -62,7 +83,8 @@
   <div class="flex flex-col gap-3 h-full">
     <!-- Deposit Overview Card -->
     <div id="deposit-card" class="h-full">
-      {{ depositCard.deposit_card(kpis, target, history_log, current_datetime, brands, available_currencies) }}
+      {{ depositCard.deposit_card(kpis, target, history_log, current_datetime,
+      brands, available_currencies) }}
     </div>
 
     <!-- Charts Section -->
@@ -77,14 +99,14 @@
         <canvas id="previousDayChart" class="w-full h-64"></canvas>
       </div>
     </div> -->
-
   </div>
 
   <!-- 🟢 Withdraw Deposit Section -->
   <div class="flex flex-col gap-3 h-full">
     <!-- Pending Deposit Overview Card -->
     <div id="withdraw-deposit-container" class="h-full">
-      {{ withdrawCard.withdraw_card(kpis, target, history_log, current_datetime, brands, available_currencies) }}
+      {{ withdrawCard.withdraw_card(kpis, target, history_log, current_datetime,
+      brands, available_currencies) }}
     </div>
   </div>
 
@@ -103,55 +125,51 @@
       {{ pendingWithdrawCard.pending_withdraw_card() }}
     </div>
   </div>
-
 </div>
-
-
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   let hourlyChart, previousDayChart;
 
-function formatNumber(value, currency) {
-  const currencySymbols = {
-    PKR: '₨',
-    BDT: '৳',
-    INR: '₹',
-  };
+  function formatNumber(value, currency) {
+    const currencySymbols = {
+      PKR: "₨",
+      BDT: "৳",
+      INR: "₹",
+    };
 
-  const currencyLocaleMap = {
-    PKR: 'en-PK',
-    BDT: 'en-BD',
-    INR: 'en-IN',
-  };
+    const currencyLocaleMap = {
+      PKR: "en-PK",
+      BDT: "en-BD",
+      INR: "en-IN",
+    };
 
-  const upperCurrency = String(currency || '').toUpperCase();
-  const symbol = currencySymbols[upperCurrency] || '';
-  const locale = currencyLocaleMap[upperCurrency] || 'en-US';
+    const upperCurrency = String(currency || "").toUpperCase();
+    const symbol = currencySymbols[upperCurrency] || "";
+    const locale = currencyLocaleMap[upperCurrency] || "en-US";
 
-  const formattedNumber = Number(value).toLocaleString(locale, {
-    style: 'decimal',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+    const formattedNumber = Number(value).toLocaleString(locale, {
+      style: "decimal",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
-  return {
-    symbol,          // e.g., "৳"
-    value: formattedNumber, // e.g., "132,508,423.31"
-    currency: upperCurrency // e.g., "BDT"
-  };
-}
+    return {
+      symbol, // e.g., "৳"
+      value: formattedNumber, // e.g., "132,508,423.31"
+      currency: upperCurrency, // e.g., "BDT"
+    };
+  }
 
-
-
-
-
-
-
-
-
-  function updatePendingWithdraw(kpis, target, $container, time,brand, currency) {
+  function updatePendingWithdraw(
+    kpis,
+    target,
+    $container,
+    time,
+    brand,
+    currency
+  ) {
     const metrics = [
       {
         label: "Pending Wd. Amount",
@@ -162,13 +180,11 @@ function formatNumber(value, currency) {
     ];
     metrics.forEach((metric) => {
       const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
-      let val = formatNumber(metric.value, currency)
+      let val = formatNumber(metric.value, currency);
       $container.append(`
         <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold">${
-              val.value ?? 0
-            }</span>
+            <span class="text-sm font-semibold">${val.value ?? 0}</span>
           </div>
           <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
             metric.label
@@ -176,12 +192,19 @@ function formatNumber(value, currency) {
         </div>
       `);
     });
-    $("#pw-time").text(time)
+    $("#pw-time").text(time);
     const percentage = 0;
     $("#progress-fill-pending-wd").animate({ width: `${percentage}%` }, 600);
   }
 
-  function updatePendingDeposit(kpis, target, $container,time,brand, currency) {
+  function updatePendingDeposit(
+    kpis,
+    target,
+    $container,
+    time,
+    brand,
+    currency
+  ) {
     const metrics = [
       { label: "Pending Dp. Amount", value: kpis.total_pending_deposit_amount },
       { label: "Pending Dp. Count", value: kpis.total_pending_deposit_count },
@@ -189,13 +212,11 @@ function formatNumber(value, currency) {
     ];
     metrics.forEach((metric) => {
       const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
-      let val = formatNumber(metric.value, currency)
+      let val = formatNumber(metric.value, currency);
       $container.append(`
         <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold">${
-              val.value ?? 0
-            }</span>
+            <span class="text-sm font-semibold">${val.value ?? 0}</span>
           </div>
           <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
             metric.label
@@ -205,7 +226,7 @@ function formatNumber(value, currency) {
     });
     const percentage = 0;
     $("#progress-fill-deposit").animate({ width: `${percentage}%` }, 600);
-    $("#pdp-time").text(time)
+    $("#pdp-time").text(time);
   }
 
   function getBadgeClassAndArrow(delta) {
@@ -230,7 +251,7 @@ function formatNumber(value, currency) {
     return { svg, cssClass };
   }
 
-  function updateDeposit(kpis, target, $container,time, brand, currency) {
+  function updateDeposit(kpis, target, $container, time, brand, currency) {
     const metrics = [
       { label: "HDoD", value: kpis.hdod },
       { label: "HWoW", value: kpis.hwow },
@@ -251,7 +272,7 @@ function formatNumber(value, currency) {
         </div>
       `);
     });
-    $("#dp-time").text(time)
+    $("#dp-time").text(time);
     const today = formatNumber(kpis.today_deposit, currency);
     const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
     const lastd = formatNumber(kpis.ld_deposit, currency);
@@ -271,7 +292,7 @@ function formatNumber(value, currency) {
     $("#progress-fill").animate({ width: `${percentage}%` }, 600);
   }
 
-  function updateWithdraw(kpis, target, $container,time,brand, currency) {
+  function updateWithdraw(kpis, target, $container, time, brand, currency) {
     const metrics = [
       { label: "HDoD", value: kpis.hdod },
       { label: "HWoW", value: kpis.hwow },
@@ -296,7 +317,7 @@ function formatNumber(value, currency) {
     const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
     const lastd = formatNumber(kpis.ld_deposit, currency);
 
-    $("#wd-time").text(time)
+    $("#wd-time").text(time);
 
     $("#td_withdraw_deposit .value").text(today.value);
     $("#td_withdraw_deposit .symbol").text(today.symbol);
@@ -420,11 +441,16 @@ function formatNumber(value, currency) {
     }
   }
 
-  
   //history process
-  function updateDepositHistory(target, histories, targetElement,brand, currency) {
-    let dp_card_holder = ''
-    let dp_card = ''
+  function updateDepositHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
 
     // ✅ If no history, show default card
     if (!histories || histories.length === 0) {
@@ -442,11 +468,10 @@ function formatNumber(value, currency) {
       return;
     }
 
-
-    histories.forEach(history => {
-      console.log("This is the Deposit")
+    histories.forEach((history) => {
+      console.log("This is the Deposit");
       //console.log(history)
-      
+
       let metrics = [
         { label: "HDoD", value: history.kpis.hdod },
         { label: "HWoW", value: history.kpis.hwow },
@@ -469,10 +494,19 @@ function formatNumber(value, currency) {
             </div>
           `;
       });
-      let history_deposit = formatNumber(history.kpis.today_deposit, history.currency)
-      let history_cum = formatNumber(history.kpis.today_deposit, history.currency)
-      let history_last = formatNumber(history.kpis.ld_deposit, history.currency)
-      let history_target = formatNumber(target, history.currency)
+      let history_deposit = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_cum = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_last = formatNumber(
+        history.kpis.ld_deposit,
+        history.currency
+      );
+      let history_target = formatNumber(target, history.currency);
       dp_card_holder += `
           <div id="dp-sub" class="flex flex-col gap-3 h-full">
             <div class="h-full">
@@ -534,16 +568,22 @@ function formatNumber(value, currency) {
                 </div>
             </div>
           </div>
-        `
+        `;
 
-      dp_card=''
+      dp_card = "";
     });
-    targetElement.html(dp_card_holder)
+    targetElement.html(dp_card_holder);
   }
-  
-  function updateWithdrawHistory(target, histories, targetElement,brand, currency) {
+
+  function updateWithdrawHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
     console.log("ginagawa...");
-    let dp_card_holder = '';
+    let dp_card_holder = "";
 
     // ✅ If no history, show default card
     if (!histories || histories.length === 0) {
@@ -562,11 +602,11 @@ function formatNumber(value, currency) {
     }
 
     // ✅ If records exist
-    histories.forEach(history => {
+    histories.forEach((history) => {
       console.log("This is the withdraw");
       console.log(history);
 
-      let dp_card = '';
+      let dp_card = "";
       let metrics = [
         { label: "HDoD", value: history.kpis.hdod },
         { label: "HWoW", value: history.kpis.hwow },
@@ -583,15 +623,26 @@ function formatNumber(value, currency) {
               <div class="w-4 h-4">${svg}</div>
               <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
             </div>
-            <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${metric.label}</div>
+            <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+              metric.label
+            }</div>
           </div>
         `;
       });
 
-      let history_deposit = formatNumber(history.kpis.today_deposit, history.currency)
-      let history_cum = formatNumber(history.kpis.today_deposit, history.currency)
-      let history_last = formatNumber(history.kpis.ld_deposit, history.currency)
-      let history_target = formatNumber(target, history.currency)
+      let history_deposit = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_cum = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_last = formatNumber(
+        history.kpis.ld_deposit,
+        history.currency
+      );
+      let history_target = formatNumber(target, history.currency);
 
       dp_card_holder += `
         <div id="wd-sub" class="flex flex-col gap-3 h-full">
@@ -655,9 +706,15 @@ function formatNumber(value, currency) {
     targetElement.html(dp_card_holder);
   }
 
-  function updatePendingWithdrawHistory(target, histories, targetElement,brand, currency) {
-    let dp_card_holder = '';
-    let dp_card = ''
+  function updatePendingWithdrawHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
     // ✅ If no history, show default card
     if (!histories || histories.length === 0) {
       dp_card_holder = `
@@ -674,7 +731,7 @@ function formatNumber(value, currency) {
       return;
     }
 
-    histories.forEach(history => {
+    histories.forEach((history) => {
       console.log("This is the withdraw");
       console.log(history);
 
@@ -683,13 +740,16 @@ function formatNumber(value, currency) {
           label: "Pending Wd. Amount",
           value: history.kpis.total_pending_withdraw_amount,
         },
-        { label: "Pending Wd. Count", value: history.kpis.total_pending_withdraw_count },
+        {
+          label: "Pending Wd. Count",
+          value: history.kpis.total_pending_withdraw_count,
+        },
         { label: "Average Time", value: history.kpis.average_pending_time },
       ];
 
       metrics.forEach((metric) => {
         const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
-         let history_val = formatNumber(metric.value, currency)
+        let history_val = formatNumber(metric.value, currency);
         dp_card += `
           <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
             <div class="flex items-center gap-2">
@@ -722,15 +782,20 @@ function formatNumber(value, currency) {
             <div id="pw-time" class="text-right text-[10px] text-gray-400">${history.time}</div>
 
           </div>
-      `
-
-    })
-    targetElement.html(dp_card_holder)
+      `;
+    });
+    targetElement.html(dp_card_holder);
   }
 
-  function updatePendingDepositHistory(target, histories, targetElement,brand, currency) {
-    let dp_card_holder = '';
-    let dp_card = ''
+  function updatePendingDepositHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
     // ✅ If no history, show default card
     if (!histories || histories.length === 0) {
       dp_card_holder = `
@@ -747,7 +812,7 @@ function formatNumber(value, currency) {
       return;
     }
 
-    histories.forEach(history => {
+    histories.forEach((history) => {
       console.log("This is the pending deposit");
       console.log(history);
 
@@ -756,13 +821,16 @@ function formatNumber(value, currency) {
           label: "Pending Dp. Amount",
           value: history.kpis.total_pending_deposit_amount,
         },
-        { label: "Pending Dp. Count", value: history.kpis.total_pending_deposit_count },
+        {
+          label: "Pending Dp. Count",
+          value: history.kpis.total_pending_deposit_count,
+        },
         { label: "Average Time", value: history.kpis.average_pending_time },
       ];
 
       metrics.forEach((metric) => {
         const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
-        let history_val = formatNumber(metric.value, currency)
+        let history_val = formatNumber(metric.value, currency);
         dp_card += `
           <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
             <div class="flex items-center gap-2">
@@ -795,26 +863,23 @@ function formatNumber(value, currency) {
             <div class="text-right text-[10px] text-gray-400">${history.time}</div>
 
           </div>
-      `
-
-    })
-    targetElement.html(dp_card_holder)
+      `;
+    });
+    targetElement.html(dp_card_holder);
   }
 
-  
-  
   function updateDashboard(sub, tab) {
-    console.log(sub, tab)
+    console.log(sub, tab);
     // 🔄 Show skeleton, hide real dashboard content
     $("#dashboard-content").hide();
     $("#skeleton-loader").show();
-    
+
     const brand = $("#brand-select").val();
     const currency = $("#currency-select").val();
     $.getJSON(
       `/api/dashboard-data?brand=${brand}&currency=${currency}&table=${sub}&tab=${tab}`,
       function (data) {
-        console.log(data)
+        console.log(data);
         const kpis = data.deposit.kpis || {},
           target = data.deposit.target || 1,
           history = data.history_log || [];
@@ -825,40 +890,77 @@ function formatNumber(value, currency) {
 
         //for deposit card
         let $depositContainer = $("#deposit-container").empty();
-        updateDeposit(data.deposit.kpis, data.deposit.target, $depositContainer, data.deposit.time, data.deposit.brand, data.deposit.currency);
+        updateDeposit(
+          data.deposit.kpis,
+          data.deposit.target,
+          $depositContainer,
+          data.deposit.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
 
         //for withdraw card
-         let $withdrawContainer = $("#withdraw-container").empty();
-        updateWithdraw(data.withdraw.kpis, data.withdraw.target, $withdrawContainer, data.withdraw.time,data.deposit.brand, data.deposit.currency);
+        let $withdrawContainer = $("#withdraw-container").empty();
+        updateWithdraw(
+          data.withdraw.kpis,
+          data.withdraw.target,
+          $withdrawContainer,
+          data.withdraw.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
 
         let $pendingDepositContainer = $("#pending-deposit-card").empty();
         updatePendingDeposit(
-          data.pendingdeposit.kpis || {}, 
-          data.pendingdeposit.target, 
+          data.pendingdeposit.kpis || {},
+          data.pendingdeposit.target,
           $pendingDepositContainer,
-          data.pendingdeposit.time,data.deposit.brand, data.deposit.currency);
+          data.pendingdeposit.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
 
         let $pendingWithdrawContainer = $("#pending-withdraw-card").empty();
-        updatePendingWithdraw(data.pendingwithdraw.kpis, data.pendingwithdraw.target, $pendingWithdrawContainer, data.withdraw.time,data.deposit.brand, data.deposit.currency);
+        updatePendingWithdraw(
+          data.pendingwithdraw.kpis,
+          data.pendingwithdraw.target,
+          $pendingWithdrawContainer,
+          data.withdraw.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
 
         //const $logList = $("ul.space-y-2").empty();
         //updateHistory(history, $logList, sub);
 
-
         // History elements handler
         let $depositHistoryContainer = $("#dp-history-parent").empty();
-        updateDepositHistory(data.deposit.target, data.deposit.history_log, $depositHistoryContainer)
+        updateDepositHistory(
+          data.deposit.target,
+          data.deposit.history_log,
+          $depositHistoryContainer
+        );
 
         let $wpHistoryContainer = $("#wp-history-parent").empty();
-        updateWithdrawHistory(data.withdraw.target, data.withdraw.history_log, $wpHistoryContainer)
-        
+        updateWithdrawHistory(
+          data.withdraw.target,
+          data.withdraw.history_log,
+          $wpHistoryContainer
+        );
+
         let $pwpHistoryContainer = $("#pwp-history-parent").empty();
-        updatePendingWithdrawHistory(data.pendingwithdraw.target, data.pendingwithdraw.history_log, $pwpHistoryContainer)
-        
+        updatePendingWithdrawHistory(
+          data.pendingwithdraw.target,
+          data.pendingwithdraw.history_log,
+          $pwpHistoryContainer
+        );
+
         let $pdpHistoryContainer = $("#pdp-history-parent").empty();
-        updatePendingDepositHistory(data.pendingdeposit.target, data.pendingdeposit.history_log, $pdpHistoryContainer)
-
-
+        updatePendingDepositHistory(
+          data.pendingdeposit.target,
+          data.pendingdeposit.history_log,
+          $pdpHistoryContainer
+        );
 
         // ✅ Fade out loader and show actual dashboard
         $("#skeleton-loader").fadeOut(200, function () {
@@ -866,16 +968,15 @@ function formatNumber(value, currency) {
         });
       }
     ).fail(function () {
-    $("#skeleton-loader").html(`
+      $("#skeleton-loader").html(`
       <div class="text-center text-red-600 font-bold p-4">
         🔴 Failed to load dashboard data. Please refresh or try again.
       </div>
     `);
-  });
+    });
   }
 
   $(document).ready(function () {
-    
     const params = new URLSearchParams(window.location.search);
     const sub = params.get("sub");
     let tab = "Deposit";
@@ -896,54 +997,68 @@ function formatNumber(value, currency) {
       updateDashboard(sub, tab);
     });
 
+     /*  ----------------------
+      REFRESH BUTTON HANDLER
+      ----------------------  */
+  $(document).on('click', '.refresh-btn', function (e) {
+    e.preventDefault();            // in case it’s a <button type="submit"> or <a>
+    e.stopPropagation();           // stop bubbling *after* your handler runs
+    console.log('🔄 refresh button clicked');
+    // ... Put your refresh logic here ...
+  });
 
     // back
-    $(document).on('click', '#back_btn', function(){
+    $(document).on("click", "#back_btn", function () {
       //hide the container
-      $("#dashboard-content").removeClass("hidden")
-      $("#dashboard-content-history").addClass("hidden")
-    })
-
-    //History Event
-    $(document).on('click', '.history-btn', function () {
-      
-      //hide the container
-      $("#dashboard-content").addClass("hidden")
-      $("#dashboard-content-history").removeClass("hidden")
-
-      
-      const dataId = $(this).data('id');
-      switch(dataId) {
-        case 1:
-          $("#wp-history-parent").addClass("hidden")
-          $("#dp-history-parent").removeClass("hidden")
-          $("#pwp-history-parent").addClass("hidden")
-          $("#pdp-history-parent").addClass("hidden")
-          break;
-        case 2:
-          $("#wp-history-parent").removeClass("hidden")
-          $("#dp-history-parent").addClass("hidden")
-          $("#pwp-history-parent").addClass("hidden")
-          $("#pdp-history-parent").addClass("hidden")
-          break;
-        case 3:
-          $("#wp-history-parent").addClass("hidden")
-          $("#dp-history-parent").addClass("hidden")
-          $("#pwp-history-parent").addClass("hidden")
-          $("#pdp-history-parent").removeClass("hidden")
-          break;
-        case 4:
-          $("#wp-history-parent").addClass("hidden")
-          $("#dp-history-parent").addClass("hidden")
-          $("#pwp-history-parent").removeClass("hidden")
-          $("#pdp-history-parent").addClass("hidden")
-          break;
-        default:
-          // code block
-      }
-      console.log("Clicked ID:", dataId);
+      $("#dashboard-content").removeClass("hidden");
+      $("#dashboard-content-history").addClass("hidden");
     });
 
+    //History Event
+    $(document).on("click", ".history-btn", function (e) {
+       /* If the original click started on the refresh button (or inside it), bail out. */
+    if ($(e.target).closest('.refresh-btn').length) {
+      return;                      // nothing below runs
+    }
+
+    console.log('📜 card clicked (not the button)');
+      //if (e.target === this) {
+        //hide the container
+        $("#dashboard-content").addClass("hidden");
+        $("#dashboard-content-history").removeClass("hidden");
+
+        const dataId = $(this).data("id");
+        switch (dataId) {
+          case 1:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").removeClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          case 2:
+            $("#wp-history-parent").removeClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          case 3:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").removeClass("hidden");
+            break;
+          case 4:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").removeClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          default:
+          // code block
+        }
+        console.log("Clicked ID:", dataId);
+      //}
+    });
 
     // Initial load
     updateDashboard(sub, tab);

@@ -68,7 +68,7 @@ async def get_dashboard_data(
         target = get_target_amount()
         combined_key = f"{brand}_{currency}"
         # for debug data
-        # date = "2025-06-16"
+        # date = "2025-05-13"
         for tab in tabs:
             data = get_hourly_deposit_data(date, combined_key, brand, tab)
             result[tab] = {
@@ -83,7 +83,8 @@ async def get_dashboard_data(
                 "cumulative_values": data["cumulative_values"],
                 "last_day_values": data["last_day_values"],
                 "last_cumulative_values": data["last_cumulative_values"],
-                "time": formatted
+                "time": data["curent_time"] if "curent_time" in data else formatted,
+                # "time": formatted
             }
 
         return JSONResponse(result)
