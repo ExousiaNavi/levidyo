@@ -99,7 +99,7 @@ def refactor_deposit_data(docs, brand,currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        "curent_time": curent_time,
+        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
@@ -214,7 +214,7 @@ def refactor_withdraw_data(docs, brand, currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        "curent_time": curent_time,
+        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
@@ -304,8 +304,11 @@ def refactor_pending_deposit(docs, brand, currency):
 
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
+    print(curent_time)
     return {
-        "curent_time": curent_time,
+         # include this key only at midnight, with the custom value
+        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_time == 0 else {}),
+        # "curent_time": curent_time,
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
@@ -399,7 +402,7 @@ def refactor_pending_withdraw(docs, brand, currency):
     history_log.sort(key=lambda x: x["time"], reverse=True)
 
     return {
-        "curent_time": curent_wtime,
+        **({"curent_time": f"{formatted} {now_minus_1h.hour}:00"} if curent_wtime == 0 else {}),
         "brand":brand,
         "currency":curr,
         "chart_hours": chart_hours,
