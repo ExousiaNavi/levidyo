@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from backend.config import settings
-from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty
+from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty,camera
 
 # crm routes
 from backend.routes.crm import crm_dashboard
@@ -27,6 +27,9 @@ app.include_router(deposit.router)
 app.include_router(profile.router)
 app.include_router(users.router)
 app.include_router(amount.router)
+
+# camera routes
+app.include_router(camera.router)
 
 # crm routes
 app.include_router(crm_dashboard.router)
