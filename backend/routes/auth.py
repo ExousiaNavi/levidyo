@@ -4,11 +4,33 @@ from backend.core.firebase import auth as firebase_auth, db
 from backend.core.templates import templates
 from backend.core.auth import USERS #for demo purposes login
 from datetime import timedelta
+import json
 
 router = APIRouter()
 # templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/")
+async def unauthorized(request: Request):
+    token = request.cookies.get("auth_token")
+    if token:
+        try:
+            firebase_auth.verify_id_token(token)  # ⬅️ actually verify the token
+            return RedirectResponse(url="/dashboard", status_code=303)
+        except:
+            pass  # ⛔️ Token is invalid or expired, show login page anyway
+
+    return templates.TemplateResponse("pages/unauthorized.html", {
+        "request": request,
+        "user": None,
+        "nav_links": [],
+    })
+    # return templates.TemplateResponse("pages/auth/login.html", {
+    #     "request": request,
+    #     "user": None,
+    #     "nav_links": [],
+    # })
+
+@router.get("/login")
 async def login_page(request: Request):
     token = request.cookies.get("auth_token")
     if token:
@@ -17,6 +39,7 @@ async def login_page(request: Request):
             return RedirectResponse(url="/dashboard", status_code=303)
         except:
             pass  # ⛔️ Token is invalid or expired, show login page anyway
+
 
     return templates.TemplateResponse("pages/auth/login.html", {
         "request": request,
@@ -27,40 +50,99 @@ async def login_page(request: Request):
 @router.post("/login")
 async def login(request: Request, token: str = Form(...)):
     try:
+        # Verify Firebase token
         decoded = firebase_auth.verify_id_token(token)
         uid = decoded.get("uid")
-
-        # 🔍 Check if the user exists in Firestore
-        user_doc = db.collection("users").document(uid).get()
-        if not user_doc.exists:
-            raise HTTPException(status_code=403, detail="Account not registered.")
-
         
-        # Create long-lived session cookie
-        expires_in = timedelta(days=7)
-        session_cookie = firebase_auth.create_session_cookie(token, expires_in=expires_in)
+        if not uid:
+            raise HTTPException(status_code=401, detail="Invalid token: Missing UID")
 
-        response = RedirectResponse("/dashboard", status_code=303)
+        # Get user document from Firestore
+        user_doc = db.collection("users").document(uid).get()
+        
+        if not user_doc.exists:
+            raise HTTPException(
+                status_code=403,
+                detail="Account not registered. Please contact admin."
+            )
+
+        user_data = user_doc.to_dict()
+        
+        # Normalize roles (handle both string and array formats)
+        roles = []
+        if 'roles' in user_data:
+            roles = [str(role).lower() for role in user_data['roles']]
+        elif 'role' in user_data:
+            roles = [str(user_data['role']).lower()]
+        
+        # Check for roles
+        is_admin = any(admin_role.lower() in (role.lower() for role in roles) for admin_role in ['admin', 'super'])
+        is_crm = any(role.lower() == 'crm' for role in roles)
+        
+        # Access control
+        if not is_admin and not is_crm:
+            # No access: return empty or 403
+           redirect_path = "/empty"
+
+        # Determine redirect path based on admin status
+        redirect_path = "/dashboard" if is_admin else "/crm"
+        
+        # Create session cookie
+        expires_in = timedelta(days=7)
+        session_cookie = firebase_auth.create_session_cookie(
+            token,
+            expires_in=expires_in
+        )
+
+        # Prepare response with appropriate redirect
+        response = RedirectResponse(redirect_path, status_code=303)
+        
+        # Set cookies
+        is_production = not request.url.hostname in ['localhost', '127.0.0.1']
+        
         response.set_cookie(
             key="session",
             value=session_cookie,
             httponly=True,
-            max_age=60 * 60 * 24 * 7,
-            expires=60 * 60 * 24 * 7,
+            secure=is_production,
             samesite="lax",
-            secure=False  # Change to True in production (HTTPS)
+            max_age=int(expires_in.total_seconds()),
+            path="/",
         )
+        
+        # Include admin status in the roles cookie
+        response.set_cookie(
+            key="user_roles",
+            value=json.dumps({
+                "roles": roles,
+                "is_admin": is_admin,
+                "is_crm": is_crm
+            }),
+            httponly=True,
+            secure=is_production,
+            samesite="lax",
+            max_age=int(expires_in.total_seconds()),
+            path="/",
+        )
+
         return response
 
     except Exception as e:
-        return templates.TemplateResponse("pages/auth/login.html", {
-            "request": request,
-            "error": f"Login failed: {str(e)}"
-        }, status_code=401)
+        print(f"Login error: {str(e)}")
+        error_response = templates.TemplateResponse(
+            "pages/auth/login.html",
+            {"request": request, "error": "Login failed"},
+            status_code=401
+        )
+        error_response.delete_cookie("session")
+        error_response.delete_cookie("user_roles")
+        return error_response
     
 @router.get("/logout")
 async def logout():
     response = RedirectResponse(url="/")
+    response.delete_cookie("session")
+    response.delete_cookie("user_roles")
     response.delete_cookie("auth_token")
     response.delete_cookie("sub")
     response.delete_cookie("name")

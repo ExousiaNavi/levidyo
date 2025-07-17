@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Request, Query
 from backend.core.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -105,62 +106,82 @@ async def dashboard(request: Request, brand: str = Query(default=None),
     # Use only cookies (cleaner URL)
     sub = request.cookies.get("sub") or "deposit"
     tab = request.cookies.get("name") or "Deposit"
-    print(sub,tab)
-    # 1. All available brands
-    brands = get_all_brands()  # e.g., ['bj', 'baji']
+    # user_roles = request.cookies.get("user_roles") or "Admin"
+    user_roles_raw = request.cookies.get("user_roles")
+    user_roles = {}
 
-    # 2. Use first brand if none provided
-    brand = brand or brands[0]
+    # Safely parse the cookie
+    if user_roles_raw:
+        try:
+            user_roles = json.loads(user_roles_raw)
+        except json.JSONDecodeError:
+            pass  # fallback to empty dict
+    
+    is_admin = user_roles.get("is_admin", False)
+    is_crm = user_roles.get("is_crm", False)
 
-    # 3. Get supported currencies for brand
-    available_currencies = get_supported_currencies(brand)  # e.g., ['BDT', 'PKR']
+    print(sub,tab,user_roles, is_admin)
+    if is_admin and not is_crm:
+        # 1. All available brands
+        brands = get_all_brands()  # e.g., ['bj', 'baji']
 
-    # 4. Use default currency if none or invalid
-    if not currency or currency not in available_currencies:
-        currency = get_default_currency(brand)
+        # 2. Use first brand if none provided
+        brand = brand or brands[0]
 
-    # 5. Use brand_currency key
-    key = f"{brand}_{currency}"
-    # date = "2025-04-21"
-    data = get_hourly_deposit_data(date, key, brand, sub)
-    target_amount = get_target_amount()
+        # 3. Get supported currencies for brand
+        available_currencies = get_supported_currencies(brand)  # e.g., ['BDT', 'PKR']
 
-    # 6. Pass values to frontend
-    data = data or {}
+        # 4. Use default currency if none or invalid
+        if not currency or currency not in available_currencies:
+            currency = get_default_currency(brand)
 
-    return templates.TemplateResponse("pages/admin/dashboard.html", {
-        "request": request,
-        "nav_links": NAV_LINKS,
-        "current_page": sub,
-        "tab": tab,
-        "user": user,
-        "current_datetime": formatted,
-        "target": target_amount,
-        "kpis": {
-            "ld_deposit": 0,
-            "ld_cumulative": 0,
-            "cdod": 0,
-            "cwow": 0,
-            "hdod": 0,
-            "hwow": 0,
-            "today_deposit": 0,
-            "today_cumulative": 0,
-            "total_pending_amount": data.get("kpis", {}).get("total_pending_amount", 0),
-            "total_pending_count": data.get("kpis", {}).get("total_pending_count", 0),
-        },
-        "chart_hours": data.get("chart_hours", []),
-        "today_values": data.get("today_values", []),
-        "cumulative_values": data.get("cumulative_values", []),
-        "last_day_values": data.get("last_day_values", []),
-        "last_cumulative_values": data.get("last_cumulative_values", []),
-        "history_log": data.get("history_log", []),
-        "brands": brands,
-        "brand": brand,
-        "currency": currency,
-        "available_currencies": available_currencies,
-    })
+        # 5. Use brand_currency key
+        key = f"{brand}_{currency}"
+        # date = "2025-04-21"
+        data = get_hourly_deposit_data(date, key, brand, sub)
+        target_amount = get_target_amount()
 
+        # 6. Pass values to frontend
+        data = data or {}
 
+        return templates.TemplateResponse("pages/admin/dashboard.html", {
+            "request": request,
+            "nav_links": NAV_LINKS,
+            "current_page": sub,
+            "tab": tab,
+            "user": user,
+            "current_datetime": formatted,
+            "target": target_amount,
+            "kpis": {
+                "ld_deposit": 0,
+                "ld_cumulative": 0,
+                "cdod": 0,
+                "cwow": 0,
+                "hdod": 0,
+                "hwow": 0,
+                "today_deposit": 0,
+                "today_cumulative": 0,
+                "total_pending_amount": data.get("kpis", {}).get("total_pending_amount", 0),
+                "total_pending_count": data.get("kpis", {}).get("total_pending_count", 0),
+            },
+            "chart_hours": data.get("chart_hours", []),
+            "today_values": data.get("today_values", []),
+            "cumulative_values": data.get("cumulative_values", []),
+            "last_day_values": data.get("last_day_values", []),
+            "last_cumulative_values": data.get("last_cumulative_values", []),
+            "history_log": data.get("history_log", []),
+            "brands": brands,
+            "brand": brand,
+            "currency": currency,
+            "available_currencies": available_currencies,
+        })
+
+    elif is_crm:
+        # If user is not admin, redirect to CRM dashboard
+        return RedirectResponse(url="/crm", status_code=303)
+    else:
+        # If user is not authorized, redirect to empty page
+        return RedirectResponse(url="/empty", status_code=303)
     # return templates.TemplateResponse("pages/admin/dashboard.html", {
     #     "request": request,
     #     "nav_links": NAV_LINKS,

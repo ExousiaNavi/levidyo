@@ -3,8 +3,10 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from backend.config import settings
-from backend.routes import auth, dashboard, deposit, profile, users, amount, context
+from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty
 
+# crm routes
+from backend.routes.crm import crm_dashboard
 import backend.core.firebase  # auto-runs initialization
 from backend.core.whitelist import restrict_ip_middleware  # available ip
 
@@ -25,6 +27,12 @@ app.include_router(deposit.router)
 app.include_router(profile.router)
 app.include_router(users.router)
 app.include_router(amount.router)
+
+# crm routes
+app.include_router(crm_dashboard.router)
+
+# Empty route
+app.include_router(empty.router)
 
 @app.get("/.well-known/{path:path}", include_in_schema=False)
 async def ignore_well_known():
