@@ -18,6 +18,7 @@ app = FastAPI(title=settings.APP_NAME)
 # Static & Template paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "frontend/static"), name="static")
+# app.mount("/uploads", StaticFiles(directory=BASE_DIR / "uploads"), name="uploads")
 
 # Include routers
 app.include_router(context.router)
