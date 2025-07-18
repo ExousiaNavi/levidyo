@@ -16,11 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const decodedMessageGallery = document.getElementById("decodedMessageGallery");
   const statusText = document.getElementById("statusText");
 
-  let width_multiplier = 0.7;
-  if (window.innerWidth < 768) {
-    console.log(window.innerWidth, "is smaller than 768px, adjusting width_multiplier");
-    width_multiplier = 1;
-  }
+  function getWidthMultiplier() {
+    return window.innerWidth < 768 ? 2 : 0.7;
+    }
 
   let selectedFilename = null;
   let loaderHidden = false;
@@ -38,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctxBuffer = buffer.getContext("2d");
 
     setInterval(async () => {
-      const frameWidth = overlay.width * width_multiplier;
+      const frameWidth = overlay.width * getWidthMultiplier();
       const frameHeight = overlay.height;
       const centerX = (overlay.width - frameWidth) / 2;
       const centerY = (overlay.height - frameHeight) / 2 + 40;
