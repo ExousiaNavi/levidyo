@@ -16,6 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const decodedMessageGallery = document.getElementById("decodedMessageGallery");
   const statusText = document.getElementById("statusText");
 
+  let width_multiplier = 0.7;
+  if (window.innerWidth < 768) {
+    console.log(window.innerWidth, "is smaller than 768px, adjusting width_multiplier");
+    width_multiplier = 0.9;
+  }
+
   let selectedFilename = null;
   let loaderHidden = false;
 
@@ -32,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctxBuffer = buffer.getContext("2d");
 
     setInterval(async () => {
-      const frameWidth = overlay.width * 0.7;
+      const frameWidth = overlay.width * width_multiplier;
       const frameHeight = overlay.height;
       const centerX = (overlay.width - frameWidth) / 2;
       const centerY = (overlay.height - frameHeight) / 2 + 40;
@@ -136,11 +142,23 @@ document.addEventListener("DOMContentLoaded", () => {
         video.addEventListener("loadeddata", () => {
           video.play().then(() => {
             const vw = video.videoWidth;
-            const vh = video.videoHeight;
+            let vh = video.videoHeight;
+
+            // Adjust height for mobile
+            if (window.innerWidth < 768) {
+                console.log('dwadwadw', window.innerWidth);
+              vh = Math.min(vh * 1.2, window.innerHeight * 1);
+            //   vh = 2000;
+              console.log("Adjusted height for mobile:", vh);
+            }
+
             overlay.width = vw;
             overlay.height = vh;
             canvas.width = vw;
             canvas.height = vh;
+            video.width = vw;
+            video.height = vh;
+
             runDetection();
           });
         });
