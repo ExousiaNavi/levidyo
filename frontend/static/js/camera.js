@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let width_multiplier = 0.7;
   if (window.innerWidth < 768) {
     console.log(window.innerWidth, "is smaller than 768px, adjusting width_multiplier");
-    width_multiplier = 0.9;
+    width_multiplier = 1;
   }
 
   let selectedFilename = null;
