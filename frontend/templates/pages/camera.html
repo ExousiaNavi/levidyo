@@ -1,53 +1,89 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-100 py-10 px-4">
-  <div class="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-2xl">
-    <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Camera Tool</h1>
+<div class="min-h-screen bg-gray-100 py-12 px-4">
+  <div class="max-w-6xl mx-auto bg-white p-10 rounded-3xl shadow-2xl border border-gray-200">
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-12 tracking-tight">📸 Camera Tool</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-      <!-- Left: Live Camera & Capture -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+
+      <!-- 🔴 Live Camera Section -->
       <div class="space-y-6">
-        <h2 class="text-xl font-semibold text-gray-700">Live Camera Feed</h2>
-        <div class="rounded-lg overflow-hidden shadow max-w-sm mx-auto aspect-video bg-black">
+        <h2 class="text-2xl font-semibold text-gray-700">Live Camera Feed</h2>
+
+        <div class="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-md border border-gray-300">
           <video id="video" class="w-full h-full object-cover" autoplay></video>
         </div>
+
         <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
+
         <button id="capture"
-          class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
-          Capture & Upload
+          class="w-full px-6 py-3 bg-blue-600 text-white rounded-xl text-lg font-semibold shadow-md hover:bg-blue-700 hover:scale-105 active:scale-95 transition-transform duration-200">
+          📤 Capture & Upload
         </button>
       </div>
 
-      <!-- Right: Encoded Image & Decode -->
-      <div class="space-y-6" id="encodedSection">
-        <h2 class="text-xl font-semibold text-gray-700">Encoded Image</h2>
-        <img id="encodedImage" class="hidden rounded-lg w-full max-w-xs mx-auto shadow-lg" />
+      <!-- 🟢 Encoded Images Gallery -->
+      <div class="space-y-6">
+        <h2 class="text-2xl font-semibold text-gray-700">Encoded Image Gallery</h2>
 
-        <button id="decodeBtn"
-          class="hidden w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
-          Decode Hidden Message
+        <div id="encodedGalleryWrapper"
+          class="max-h-[300px] overflow-y-auto border border-gray-300 rounded-xl p-3 bg-gray-50 shadow-inner">
+          <div id="encodedGallery" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- thumbnails inserted here -->
+          </div>
+        </div>
+
+        <button id="decodeBtnGallery"
+          class="hidden w-full px-6 py-3 bg-green-600 text-white rounded-xl text-lg font-semibold shadow-md hover:bg-green-700 hover:scale-105 active:scale-95 transition-transform duration-200">
+          🔍 Decode Selected Image
         </button>
 
-        <div class="bg-gray-100 p-4 rounded-lg">
-          <p id="decodedMessage" class="text-gray-800 font-mono text-center break-words"></p>
-        </div>
+        <p id="decodedMessageGallery"
+          class="text-center mt-4 text-base text-gray-800 font-mono break-words whitespace-pre-wrap px-2"></p>
       </div>
     </div>
   </div>
 </div>
 
+<style>
+  #encodedGalleryWrapper::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #encodedGalleryWrapper::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.2);
+    border-radius: 4px;
+  }
+
+  /* Smooth image animations */
+  #encodedGallery img {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  #encodedGallery img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  #encodedGallery img:active {
+    transform: scale(0.95);
+  }
+</style>
+
 <script>
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
   const captureBtn = document.getElementById("capture");
-  const encodedImage = document.getElementById("encodedImage");
-  const decodeBtn = document.getElementById("decodeBtn");
-  const decodedMessage = document.getElementById("decodedMessage");
+  const encodedGallery = document.getElementById("encodedGallery");
+  const decodeBtnGallery = document.getElementById("decodeBtnGallery");
+  const decodedMessageGallery = document.getElementById("decodedMessageGallery");
 
-  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-    video.srcObject = stream;
-  });
+  let selectedFilename = null;
+
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => video.srcObject = stream)
+    .catch(console.error);
 
   captureBtn.onclick = () => {
     const ctx = canvas.getContext("2d");
@@ -60,25 +96,58 @@
 
       fetch("/upload-image", {
         method: "POST",
-        body: formData,
+        body: formData
       })
-      .then(res => res.json())
-      .then(data => {
-        encodedImage.src = data.image_url;
-        encodedImage.classList.remove("hidden");
-        decodeBtn.classList.remove("hidden");
-        decodeBtn.dataset.filename = data.image_url.split("/").pop();
-      });
+        .then(res => res.json())
+        .then(() => loadGallery())
+        .catch(console.error);
     }, "image/png");
   };
 
-  decodeBtn.onclick = () => {
-    const filename = decodeBtn.dataset.filename;
-    fetch(`/decode-image?filename=${filename}`)
+  function loadGallery() {
+    fetch("/list-encoded-images")
       .then(res => res.json())
       .then(data => {
-        decodedMessage.textContent = "Decoded Key: " + data.message;
-      });
+        encodedGallery.innerHTML = "";
+        data.files.reverse().forEach(fn => {
+          const img = document.createElement("img");
+          img.src = data.base_url + fn;
+          img.className = `
+            cursor-pointer 
+            rounded-xl 
+            border-4 border-transparent 
+            hover:border-blue-500
+            active:border-green-500
+            transition-all
+          `.trim();
+
+          img.dataset.filename = fn;
+
+          img.onclick = () => {
+            Array.from(encodedGallery.children).forEach(i =>
+              i.classList.remove("border-blue-500", "border-green-500")
+            );
+            img.classList.add("border-blue-500");
+            selectedFilename = fn;
+            decodeBtnGallery.classList.remove("hidden");
+          };
+
+          encodedGallery.prepend(img);  // latest on top
+        });
+      })
+      .catch(console.error);
+  }
+
+  decodeBtnGallery.onclick = () => {
+    if (!selectedFilename) return;
+    fetch(`/decode-image?filename=${selectedFilename}`)
+      .then(res => res.json())
+      .then(data => {
+        decodedMessageGallery.textContent = "🧩 Decoded Key: " + data.message;
+      })
+      .catch(console.error);
   };
+
+  window.addEventListener("load", loadGallery);
 </script>
 {% endblock %}
