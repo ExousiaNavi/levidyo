@@ -6,21 +6,28 @@
     <h1 class="text-4xl font-bold text-center text-gray-800 mb-12 tracking-tight">📸 Camera Tool</h1>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-
       <!-- 🔴 Live Camera Section -->
       <div class="space-y-6">
         <h2 class="text-2xl font-semibold text-gray-700">Live Camera Feed</h2>
 
-        <div class="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-md border border-gray-300">
-          <video id="video" class="w-full h-full object-cover" autoplay></video>
+       <div class="relative aspect-video w-full rounded-xl overflow-hidden bg-black shadow-md border border-gray-300">
+          <video id="video" class="w-full h-full object-cover" autoplay muted playsinline></video>
+          <canvas id="overlay" class="absolute top-0 left-0 w-full h-full"></canvas>
+          <!-- <img id="silhouette" src="/static/logo/guide.png"
+              class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80" /> -->
         </div>
+
 
         <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
 
-        <button id="capture"
+        <button disabled id="capture"
           class="w-full px-6 py-3 bg-blue-600 text-white rounded-xl text-lg font-semibold shadow-md hover:bg-blue-700 hover:scale-105 active:scale-95 transition-transform duration-200">
           📤 Capture & Upload
         </button>
+        <div id="loader" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: white; z-index: 9999;">
+        <p>Loading camera...</p>
+      </div>
+
       </div>
 
       <!-- 🟢 Encoded Images Gallery -->
@@ -56,7 +63,6 @@
     border-radius: 4px;
   }
 
-  /* Smooth image animations */
   #encodedGallery img {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
@@ -71,83 +77,8 @@
   }
 </style>
 
-<script>
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const captureBtn = document.getElementById("capture");
-  const encodedGallery = document.getElementById("encodedGallery");
-  const decodeBtnGallery = document.getElementById("decodeBtnGallery");
-  const decodedMessageGallery = document.getElementById("decodedMessageGallery");
+<!-- ✅ Load Face API from local static path -->
+<script defer src="/static/js/face-api.js"></script>
+<script defer src="/static/js/camera.js"></script>
 
-  let selectedFilename = null;
-
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => video.srcObject = stream)
-    .catch(console.error);
-
-  captureBtn.onclick = () => {
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob(blob => {
-      const formData = new FormData();
-      formData.append("image", blob, "captured.png");
-      formData.append("message", "hidden message here");
-
-      fetch("/upload-image", {
-        method: "POST",
-        body: formData
-      })
-        .then(res => res.json())
-        .then(() => loadGallery())
-        .catch(console.error);
-    }, "image/png");
-  };
-
-  function loadGallery() {
-    fetch("/list-encoded-images")
-      .then(res => res.json())
-      .then(data => {
-        encodedGallery.innerHTML = "";
-        data.files.reverse().forEach(fn => {
-          const img = document.createElement("img");
-          img.src = data.base_url + fn;
-          img.className = `
-            cursor-pointer 
-            rounded-xl 
-            border-4 border-transparent 
-            hover:border-blue-500
-            active:border-green-500
-            transition-all
-          `.trim();
-
-          img.dataset.filename = fn;
-
-          img.onclick = () => {
-            Array.from(encodedGallery.children).forEach(i =>
-              i.classList.remove("border-blue-500", "border-green-500")
-            );
-            img.classList.add("border-blue-500");
-            selectedFilename = fn;
-            decodeBtnGallery.classList.remove("hidden");
-          };
-
-          encodedGallery.prepend(img);  // latest on top
-        });
-      })
-      .catch(console.error);
-  }
-
-  decodeBtnGallery.onclick = () => {
-    if (!selectedFilename) return;
-    fetch(`/decode-image?filename=${selectedFilename}`)
-      .then(res => res.json())
-      .then(data => {
-        decodedMessageGallery.textContent = "🧩 Decoded Key: " + data.message;
-      })
-      .catch(console.error);
-  };
-
-  window.addEventListener("load", loadGallery);
-</script>
 {% endblock %}
