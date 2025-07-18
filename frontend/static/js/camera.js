@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
 
   function getWidthMultiplier() {
-    return window.innerWidth < 768 ? 2 : 0.7;
+    return window.innerWidth < 768 ? 1 : 0.7;
     }
 
   let selectedFilename = null;
