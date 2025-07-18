@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const loader = document.getElementById("loader");
-  if (loader) loader.style.opacity = "1"; // start fully visible
+  if (loader) loader.style.opacity = "1";
 
   const frameImage = new Image();
   frameImage.src = "/static/logo/b.png";
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setInterval(async () => {
       const frameWidth = overlay.width * 0.7;
-      const frameHeight = overlay.height * 1;
+      const frameHeight = overlay.height;
       const centerX = (overlay.width - frameWidth) / 2;
       const centerY = (overlay.height - frameHeight) / 2 + 40;
 
@@ -119,7 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ctxOverlay.restore();
       }
 
-      // ✅ Hide loader after first render
       if (!loaderHidden && loader) {
         loader.style.opacity = "0";
         setTimeout(() => loader.style.display = "none", 400);
@@ -129,9 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setupCameraAndRunDetection() {
-    navigator.mediaDevices.getUserMedia({ video: true })
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
       .then((stream) => {
         video.srcObject = stream;
+        video.setAttribute("playsinline", true);
 
         video.addEventListener("loadeddata", () => {
           video.play().then(() => {
@@ -181,15 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data.files.reverse().forEach((fn) => {
           const img = document.createElement("img");
           img.src = data.base_url + fn;
-          img.className = `
-            cursor-pointer 
-            rounded-xl 
-            border-4 border-transparent 
-            hover:border-blue-500
-            active:border-green-500
-            transition-all
-          `.trim();
-
+          img.className = `cursor-pointer rounded-xl border-4 border-transparent hover:border-blue-500 active:border-green-500 transition-all`.trim();
           img.dataset.filename = fn;
 
           img.onclick = () => {
