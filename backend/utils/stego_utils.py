@@ -31,6 +31,14 @@ def encode_image(input_path: str, output_path: str, secret_text: str, watermark_
     watermark = cv2.resize(watermark, (int(wm_w * scale_factor), int(wm_h * scale_factor)))
     wm_h, wm_w = watermark.shape[:2]
 
+    # Resize watermark if it's bigger than image
+    if wm_h > h or wm_w > w:
+        scale_h = h / wm_h
+        scale_w = w / wm_w
+        scale_factor = min(scale_h, scale_w) * 0.9  # leave margin
+        watermark = cv2.resize(watermark, (int(wm_w * scale_factor), int(wm_h * scale_factor)))
+        wm_h, wm_w = watermark.shape[:2]
+
     # Step 3: Always center watermark (ignore face detection)
     x_wm = (w - wm_w) // 2
     y_wm = (h - wm_h) // 2
@@ -43,13 +51,17 @@ def encode_image(input_path: str, output_path: str, secret_text: str, watermark_
     overlay = img.copy()
     for i in range(wm_h):
         for j in range(wm_w):
+            y = y_wm + i
+            x = x_wm + j
+            if y >= h or x >= w:
+                continue
             if watermark.shape[2] == 4:
-                alpha = watermark[i, j, 3] / 255.0 * 0.3  # Adjust opacity here
+                alpha = watermark[i, j, 3] / 255.0 * 0.3  # Adjust opacity
             else:
                 alpha = 0.3
             for c in range(3):
-                overlay[y_wm + i, x_wm + j, c] = (
-                    alpha * watermark[i, j, c] + (1 - alpha) * overlay[y_wm + i, x_wm + j, c]
+                overlay[y, x, c] = (
+                    alpha * watermark[i, j, c] + (1 - alpha) * overlay[y, x, c]
                 )
 
     img = overlay
