@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Request, Query
 from backend.core.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from backend.core.auth import check_auth, NAV_LINKS
+from backend.core.auth import check_auth, NAV_LINKS_CRM
 from backend.core.deposit import get_hourly_deposit_data
 from backend.core.amount import get_target_amount 
 from backend.filters.brand import get_all_brands, get_supported_currencies, get_default_currency
@@ -39,19 +39,20 @@ async def crm_dashboard(request: Request):
     # Fetch data for the dashboard
     # data = get_dashboard_data(brand, currency)
 
-    if not is_admin and is_crm:
+    if is_admin or is_crm:
         return templates.TemplateResponse("pages/crm/dashboard.html", {
             "request": request,
             "user": user,
             # "data": data,
-            # "nav_links": get_nav_links(user),
+            "nav_links": NAV_LINKS_CRM,
+            "current_page": "CRM",
             # "brand": brand,
             # "currency": currency,
         })
     
-    elif is_admin:
-        # If user is not admin, redirect to CRM dashboard
-        return RedirectResponse(url="/dashboard", status_code=303)
+    # elif is_admin:
+    #     # If user is not admin, redirect to CRM dashboard
+    #     return RedirectResponse(url="/dashboard", status_code=303)
     
     else:
         # If user is not authorized, redirect to empty page

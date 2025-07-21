@@ -7,15 +7,18 @@
   <!-- Responsive Tabs -->
   <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-6">
     <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-600 text-green-700">Profile</button>
-    <button class="tab-link text-sm font-medium px-4 py-2 hover:text-green-600" data-tab="usersTab">Manage Users</button>
-    <button class="tab-link text-sm font-medium px-4 py-2 hover:text-green-600" data-tab="createTab">Create User</button>
-    <button class="tab-link text-sm font-medium px-4 py-2 hover:text-green-600" data-tab="targetTab">💰 Target Amount</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="usersTab">Manage</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="createTab">Create</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="targetTab">Amount</button>
   </div>
 
   <!-- Profile Info -->
   <div id="profileTab" class="tab-pane block">
     <div class="bg-white rounded-lg shadow p-6 space-y-4">
-      <h2 class="text-xl font-semibold text-gray-800">👋 Hello, {{ user.email }}</h2>
+      <h2 class="text-xl font-semibold text-gray-800 break-words">
+  👋 Hello, {{ user.email }}
+</h2>
+
       <p class="text-gray-600">Role: <span class="font-semibold">{{ user.role }}</span></p>
     </div>
   </div>

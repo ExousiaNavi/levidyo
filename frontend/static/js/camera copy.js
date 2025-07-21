@@ -1,12 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const con = document.getElementById("skeleton-loader-container");
-  const loader = document.getElementById("skeleton-loader");
-  if (loader) {
-    con.style.opacity = "1"
-    loader.style.opacity = "1"
-    // Disable scrolling
-    document.body.style.overflow = "hidden";
-  };
+  const loader = document.getElementById("loader");
+  if (loader) loader.style.opacity = "1";
+
+  const frameImage = new Image();
+  frameImage.src = "/static/logo/b.png";
+  frameImage.crossOrigin = "Anonymous";
 
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
@@ -19,17 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
 
   function getWidthMultiplier() {
-    return window.innerWidth < 768 ? 0.7 : 0.6; // wider circle on desktop
-  }
-
-  function getAspectRatio() {
-  // On wider screens, stretch vertically
-  return window.innerWidth < 768 ? 1 : 1.25;
-}
-
+    return window.innerWidth < 768 ? 1 : 0.7;
+    }
 
   let selectedFilename = null;
-  let loaderConHidden = false;
   let loaderHidden = false;
 
   async function loadModels() {
@@ -41,12 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
     await loadModels();
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
 
+    const buffer = document.createElement("canvas");
+    const ctxBuffer = buffer.getContext("2d");
+
     setInterval(async () => {
-      const isMobile = window.innerWidth < 768;
-      const diameter = Math.min(overlay.width, overlay.height) * getWidthMultiplier();
-      const radius = diameter / 2;
-      const circleX = overlay.width / 2;
-      const circleY = isMobile ? overlay.height / 2 : overlay.height / 2; // move up on desktop
+      const frameWidth = overlay.width * getWidthMultiplier();
+      const frameHeight = overlay.height;
+      const centerX = (overlay.width - frameWidth) / 2;
+      const centerY = (overlay.height - frameHeight) / 2 + 40;
+
+      buffer.width = overlay.width;
+      buffer.height = overlay.height;
 
       let color = "red";
       let message = "Align your face properly";
@@ -70,86 +66,73 @@ document.addEventListener("DOMContentLoaded", () => {
         const noseX = nose[3].x;
         const noseOffset = Math.abs(eyeCenterX - noseX);
 
-        const padding = radius * 0.3; // even stricter than before
+        const padding = 40;
+        const frameCenterX = centerX + frameWidth / 2;
+        const frameCenterY = centerY + frameHeight * 0.4;
         const isFaceCentered =
-          Math.abs(faceCenterX - circleX) < padding &&
-          Math.abs(faceCenterY - circleY) < padding;
-        const isUpright = eyeSlope < 8 && noseOffset < 12;
+          Math.abs(faceCenterX - frameCenterX) < padding &&
+          Math.abs(faceCenterY - frameCenterY) < padding;
+        const isUpright = eyeSlope < 10 && noseOffset < 15;
 
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
-        // const minFaceAreaRatio = 0.15;
-        const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.15 && areaRatio <= 0.18; // more strict range
+        const minFaceAreaRatio = 0.05;
+        const isFaceBigEnough = faceArea / frameArea > minFaceAreaRatio;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
           message = "";
         } else if (!isFaceBigEnough) {
           message = "Move closer to the camera";
-        } else if (!isFaceCentered) {
-          message = "Center your face inside the circle";
         } else {
           message = "Align your face properly";
         }
-
-        console.log("Distance from center:", {
-          x: Math.abs(faceCenterX - circleX),
-          y: Math.abs(faceCenterY - circleY),
-          areaRatio: faceArea / frameArea
-        });
       }
 
       captureBtn.disabled = color !== "lime";
       captureBtn.classList.toggle("opacity-50", color !== "lime");
       if (statusText) statusText.textContent = message;
 
-      // Dim background
+      ctxBuffer.clearRect(0, 0, buffer.width, buffer.height);
+      ctxBuffer.drawImage(video, 0, 0, buffer.width, buffer.height);
+
+      ctxBuffer.globalCompositeOperation = "destination-in";
+      if (frameImage.complete && frameImage.naturalWidth !== 0) {
+        ctxBuffer.drawImage(frameImage, centerX, centerY, frameWidth, frameHeight);
+      } else {
+        ctxBuffer.fillRect(centerX, centerY, frameWidth, frameHeight);
+      }
+      ctxBuffer.globalCompositeOperation = "source-over";
+
       ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
-      ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.67)";
+      ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.5)";
       ctxOverlay.fillRect(0, 0, overlay.width, overlay.height);
+      ctxOverlay.drawImage(buffer, 0, 0);
 
-      // Cut out circle
-      ctxOverlay.save();
-      ctxOverlay.globalCompositeOperation = "destination-out";
-      ctxOverlay.beginPath();
-      // ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
-      ctxOverlay.ellipse(circleX, circleY, radius, radius * getAspectRatio(), 0, 0, Math.PI * 2);
+      if (frameImage.complete && frameImage.naturalWidth !== 0) {
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = frameWidth;
+        offCanvas.height = frameHeight;
+        const offCtx = offCanvas.getContext("2d");
+        offCtx.drawImage(frameImage, 0, 0, frameWidth, frameHeight);
 
-      ctxOverlay.fill();
-      ctxOverlay.restore();
-
-      // Circle border glow
-      ctxOverlay.save();
-      ctxOverlay.beginPath();
-      // ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
-      ctxOverlay.ellipse(circleX, circleY, radius, radius * getAspectRatio(), 0, 0, Math.PI * 2);
-
-      ctxOverlay.strokeStyle = color;
-      ctxOverlay.lineWidth = 4;
-      ctxOverlay.shadowBlur = 15;
-      ctxOverlay.shadowColor = color;
-      ctxOverlay.stroke();
-      ctxOverlay.restore();
+        ctxOverlay.save();
+        ctxOverlay.filter = `drop-shadow(0 0 ${color === "lime" ? 20 : 10}px ${color})`;
+        ctxOverlay.globalCompositeOperation = "lighter";
+        ctxOverlay.drawImage(offCanvas, centerX, centerY);
+        ctxOverlay.restore();
+      }
 
       if (!loaderHidden && loader) {
-        // After loading finishes
-        
-        con.style.opacity = "0";
         loader.style.opacity = "0";
-        setTimeout(() => (loader.style.display = "none"), 400);
-
+        setTimeout(() => loader.style.display = "none", 400);
         loaderHidden = true;
-        loaderConHidden = true;
-        document.querySelector("#mdh").classList.remove('hidden')
-        con.classList.add("hidden")
       }
     }, 200);
   }
 
   function setupCameraAndRunDetection() {
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "user" } })
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
       .then((stream) => {
         video.srcObject = stream;
         video.setAttribute("playsinline", true);
@@ -159,9 +142,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const vw = video.videoWidth;
             let vh = video.videoHeight;
 
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-              vh = Math.min(vh * 1.1, window.innerHeight); // slightly scaled
+            // Adjust height for mobile
+            if (window.innerWidth < 768) {
+                console.log('dwadwadw', window.innerWidth);
+              vh = Math.min(vh * 1.2, window.innerHeight * 1);
+            //   vh = 2000;
+              console.log("Adjusted height for mobile:", vh);
             }
 
             overlay.width = vw;
@@ -178,7 +164,11 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(console.error);
   }
 
-  setupCameraAndRunDetection();
+  frameImage.onload = setupCameraAndRunDetection;
+  frameImage.onerror = () => {
+    console.error("Failed to load frame image, using fallback");
+    setupCameraAndRunDetection();
+  };
 
   captureBtn.onclick = () => {
     const ctx = canvas.getContext("2d");
@@ -207,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data.files.reverse().forEach((fn) => {
           const img = document.createElement("img");
           img.src = data.base_url + fn;
-          img.className = `cursor-pointer rounded-xl border-4 border-transparent hover:border-blue-500 active:border-green-500 transition-all`;
+          img.className = `cursor-pointer rounded-xl border-4 border-transparent hover:border-blue-500 active:border-green-500 transition-all`.trim();
           img.dataset.filename = fn;
 
           img.onclick = () => {

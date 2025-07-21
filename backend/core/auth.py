@@ -22,13 +22,25 @@ NAV_LINKS = [
     "url": "#",
     "submenu": [
       {"name": "Deposit","tab":"deposit", "url": "/dashboard", "icon": "dollar-sign", "table": "deposit"},
-    #   {"name": "Withdraw","tab":"withdraw", "url": "/dashboard", "icon": "dollar-sign", "table": "withdraw"},
-    #   {"name": "Pending Deposit","tab":"pendingdeposit", "url": "/dashboard", "icon": "dollar-sign", "table": "pendingdeposit"},
-    #   {"name": "Pending Withdraw","tab":"pendingwithdraw", "url": "/dashboard","icon": "dollar-sign", "table": "pendingwithdraw"},
-      
     ]
   },
   {"name": "Profile", "url": "/profile", "icon": "user"},
+  {"name": "CRM", "url": "/crm", "icon": "users"},
+  {"name": "Camera", "url": "/camera", "icon": "camera"},
+]
+
+NAV_LINKS_CRM = [
+  {
+    "name": "Dashboard",
+    "icon": "layout-dashboard",
+    "url": "#",
+    "submenu": [
+    #   {"name": "Deposit","tab":"deposit", "url": "/dashboard", "icon": "dollar-sign", "table": "deposit"},
+    ]
+  },
+#   {"name": "Profile", "url": "/profile", "icon": "user"},
+  {"name": "CRM", "url": "/crm", "icon": "users"},
+  {"name": "Camera", "url": "/camera", "icon": "camera"},
 ]
 
 
