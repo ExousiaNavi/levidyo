@@ -2,11 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const con = document.getElementById("skeleton-loader-container");
   const loader = document.getElementById("skeleton-loader");
   if (loader) {
-    con.style.opacity = "1"
-    loader.style.opacity = "1"
-    // Disable scrolling
-    document.body.style.overflow = "hidden";
-  };
+    con.style.opacity = "1";
+    loader.style.opacity = "1";
+    document.body.style.overflow = "hidden"; // Disable scrolling
+  }
 
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
@@ -19,14 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
 
   function getWidthMultiplier() {
-    return window.innerWidth < 768 ? 0.7 : 0.6; // wider circle on desktop
+    return window.innerWidth < 768 ? 1.5 : 0.6;
   }
-
-  function getAspectRatio() {
-  // On wider screens, stretch vertically
-  return window.innerWidth < 768 ? 1 : 1.25;
-}
-
 
   let selectedFilename = null;
   let loaderConHidden = false;
@@ -43,10 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setInterval(async () => {
       const isMobile = window.innerWidth < 768;
-      const diameter = Math.min(overlay.width, overlay.height) * getWidthMultiplier();
+      const diameter = isMobile
+        ? Math.min(overlay.width, overlay.height)
+        : Math.min(overlay.width, overlay.height) * getWidthMultiplier();
       const radius = diameter / 2;
       const circleX = overlay.width / 2;
-      const circleY = isMobile ? overlay.height / 2 : overlay.height / 2; // move up on desktop
+      const circleY = overlay.height / 2;
 
       let color = "red";
       let message = "Align your face properly";
@@ -70,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const noseX = nose[3].x;
         const noseOffset = Math.abs(eyeCenterX - noseX);
 
-        const padding = radius * 0.3; // even stricter than before
+        const padding = radius * 0.3;
         const isFaceCentered =
           Math.abs(faceCenterX - circleX) < padding &&
           Math.abs(faceCenterY - circleY) < padding;
@@ -78,9 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
-        // const minFaceAreaRatio = 0.15;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.15 && areaRatio <= 0.18; // more strict range
+        const isFaceBigEnough = areaRatio > 0.15 && areaRatio <= 0.18;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
@@ -96,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Distance from center:", {
           x: Math.abs(faceCenterX - circleX),
           y: Math.abs(faceCenterY - circleY),
-          areaRatio: faceArea / frameArea
+          areaRatio: areaRatio,
         });
       }
 
@@ -113,18 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
       ctxOverlay.save();
       ctxOverlay.globalCompositeOperation = "destination-out";
       ctxOverlay.beginPath();
-      // ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
-      ctxOverlay.ellipse(circleX, circleY, radius, radius * getAspectRatio(), 0, 0, Math.PI * 2);
-
+      ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
       ctxOverlay.fill();
       ctxOverlay.restore();
 
       // Circle border glow
       ctxOverlay.save();
       ctxOverlay.beginPath();
-      // ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
-      ctxOverlay.ellipse(circleX, circleY, radius, radius * getAspectRatio(), 0, 0, Math.PI * 2);
-
+      ctxOverlay.arc(circleX, circleY, radius, 0, Math.PI * 2);
       ctxOverlay.strokeStyle = color;
       ctxOverlay.lineWidth = 4;
       ctxOverlay.shadowBlur = 15;
@@ -133,16 +123,14 @@ document.addEventListener("DOMContentLoaded", () => {
       ctxOverlay.restore();
 
       if (!loaderHidden && loader) {
-        // After loading finishes
-        
         con.style.opacity = "0";
         loader.style.opacity = "0";
         setTimeout(() => (loader.style.display = "none"), 400);
 
         loaderHidden = true;
         loaderConHidden = true;
-        document.querySelector("#mdh").classList.remove('hidden')
-        con.classList.add("hidden")
+        document.querySelector("#mdh").classList.remove("hidden");
+        con.classList.add("hidden");
       }
     }, 200);
   }
@@ -161,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
-              vh = Math.min(vh * 1.1, window.innerHeight); // slightly scaled
+              vh = Math.min(vh * 1.1, window.innerHeight);
             }
 
             overlay.width = vw;
@@ -207,7 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
         data.files.reverse().forEach((fn) => {
           const img = document.createElement("img");
           img.src = data.base_url + fn;
-          img.className = `cursor-pointer rounded-xl border-4 border-transparent hover:border-blue-500 active:border-green-500 transition-all`;
+          img.className =
+            "cursor-pointer rounded-xl border-4 border-transparent hover:border-blue-500 active:border-green-500 transition-all";
           img.dataset.filename = fn;
 
           img.onclick = () => {
