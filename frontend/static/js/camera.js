@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.15 && areaRatio <= 0.18;
+        const isFaceBigEnough = areaRatio > 0.10 && areaRatio <= 0.18;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
