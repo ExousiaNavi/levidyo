@@ -153,20 +153,24 @@ document.addEventListener("DOMContentLoaded", () => {
         video.addEventListener("loadeddata", () => {
           video.play().then(() => {
             // Set a fixed, portrait-oriented working size
-            const desiredWidth = 360;
-            const desiredHeight = 480;
+            // const desiredWidth = 360;
+            // const desiredHeight = 480;
 
-            overlay.width = desiredWidth;
-            overlay.height = desiredHeight;
-            canvas.width = desiredWidth;
-            canvas.height = desiredHeight;
+            // overlay.width = desiredWidth;
+            // overlay.height = desiredHeight;
+            // canvas.width = desiredWidth;
+            // canvas.height = desiredHeight;
+            overlay.width = video.videoWidth;
+            overlay.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
             // Keep video resolution native, don't force width/height
-            video.setAttribute("width", desiredWidth);
-            video.setAttribute("height", desiredHeight);
+            // video.setAttribute("width", desiredWidth);
+            // video.setAttribute("height", desiredHeight);
             
-            overlay.style.width = `${desiredWidth}px`;
-            overlay.style.height = `${desiredHeight}px`;
+            // overlay.style.width = `${desiredWidth}px`;
+            // overlay.style.height = `${desiredHeight}px`;
 
             runDetection();
           });
