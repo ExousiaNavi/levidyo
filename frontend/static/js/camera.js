@@ -164,6 +164,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Keep video resolution native, don't force width/height
             video.setAttribute("width", desiredWidth);
             video.setAttribute("height", desiredHeight);
+            
+            overlay.style.width = `${desiredWidth}px`;
+            overlay.style.height = `${desiredHeight}px`;
 
             runDetection();
           });
