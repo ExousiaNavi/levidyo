@@ -31,10 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
 
     setInterval(async () => {
-      const isMobile = window.innerWidth < 768;
+      const isMobile = window.innerWidth < 500;
 
-      const oblongWidth = isMobile ? overlay.width * 0.5 : overlay.width * 0.35; // narrower
-      const oblongHeight = isMobile ? overlay.height * 0.85 : overlay.height * 0.6; // taller
+      // Use full height for mobile, balanced shape for desktop
+      const oblongHeight = isMobile ? overlay.height * 0.75 : overlay.height * 0.65;
+      const oblongWidth = isMobile ? oblongHeight * 0.72 : oblongHeight * 0.65;
+
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2;
       const centerX = overlay.width / 2;
