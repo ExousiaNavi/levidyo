@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Use full height for mobile, balanced shape for desktop
       const oblongHeight = isMobile ? overlay.height * 0.75 : overlay.height * 0.65;
-      const oblongWidth = isMobile ? oblongHeight * 0.9 : oblongHeight * 0.65;
+      const oblongWidth = isMobile ? overlay.width * 0.8 : oblongHeight * 0.65;
 
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2;
