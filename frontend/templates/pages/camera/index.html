@@ -54,7 +54,7 @@ id="mdh"
     </div>
 
     <div
-      class="relative aspect-video w-full h-[300px] sm:h-full border rounded-xl overflow-hidden bg-black border border-gray-300 shadow-sm"
+      class="relative w-full max-w-[360px] mx-auto h-[480px] sm:h-full border rounded-xl overflow-hidden bg-black border border-gray-300 shadow-sm"
     >
       <video
         id="video"
@@ -138,14 +138,16 @@ id="mdh"
   #encodedGallery img:active {
     transform: scale(0.95);
   }
- <!-- canvas, video, #overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  object-fit: cover;
+ #video,
+#overlay {
   width: 100%;
-  height: 100%;
-} -->
+  max-width: 360px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  border-radius: 1rem;
+}
 
 
 </style>

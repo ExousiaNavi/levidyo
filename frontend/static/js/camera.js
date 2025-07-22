@@ -145,20 +145,18 @@ document.addEventListener("DOMContentLoaded", () => {
         video.setAttribute("playsinline", true);
         video.addEventListener("loadeddata", () => {
           video.play().then(() => {
-            const vw = video.videoWidth;
-            let vh = video.videoHeight;
+            // Set a fixed, portrait-oriented working size
+            const desiredWidth = 360;
+            const desiredHeight = 480;
 
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-              vh = Math.min(vh * 1.1, window.innerHeight);
-            }
+            overlay.width = desiredWidth;
+            overlay.height = desiredHeight;
+            canvas.width = desiredWidth;
+            canvas.height = desiredHeight;
 
-            overlay.width = vw;
-            overlay.height = vh;
-            canvas.width = vw;
-            canvas.height = vh;
-            video.width = vw;
-            video.height = vh;
+            // Keep video resolution native, don't force width/height
+            video.setAttribute("width", desiredWidth);
+            video.setAttribute("height", desiredHeight);
 
             runDetection();
           });
