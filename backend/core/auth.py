@@ -39,8 +39,8 @@ NAV_LINKS_CRM = [
     ]
   },
 #   {"name": "Profile", "url": "/profile", "icon": "user"},
-  # {"name": "CRM", "url": "/crm", "icon": "users"},
-  {"name": "Camera", "url": "/camera", "icon": "camera"},
+  {"name": "CRM", "url": "/crm", "icon": "users"},
+  # {"name": "Camera", "url": "/camera", "icon": "camera"},
 ]
 
 
