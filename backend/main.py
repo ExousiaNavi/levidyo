@@ -10,6 +10,17 @@ from backend.routes.crm import crm_dashboard
 import backend.core.firebase  # auto-runs initialization
 from backend.core.whitelist import restrict_ip_middleware  # available ip
 
+from starlette.staticfiles import StaticFiles
+from starlette.types import Scope
+
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope: Scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    
 app = FastAPI(title=settings.APP_NAME)
 
 # Register IP restriction middleware
@@ -17,7 +28,7 @@ app = FastAPI(title=settings.APP_NAME)
 
 # Static & Template paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-app.mount("/static", StaticFiles(directory=BASE_DIR / "frontend/static"), name="static")
+app.mount("/static", NoCacheStaticFiles(directory=BASE_DIR / "frontend/static"), name="static")
 # app.mount("/uploads", StaticFiles(directory=BASE_DIR / "uploads"), name="uploads")
 
 # Include routers
