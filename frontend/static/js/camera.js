@@ -85,8 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.20 && areaRatio <= 0.25;
-        document.querySelector("#face_position").innerHTML = `face ratio: ${areaRatio}, isFaceCentered: ${isFaceCentered}, isUpright: ${isUpright}`
+        const isFaceBigEnough = areaRatio > 0.20 && areaRatio <= 0.30;
+        // document.querySelector("#face_position").innerHTML = `face ratio: ${areaRatio}, isFaceCentered: ${isFaceCentered}, isUpright: ${isUpright}`
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
           message = "";
