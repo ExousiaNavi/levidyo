@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const video = document.getElementById("video");
+  video.style.transform = "scaleX(-1)";//remove the mirror effect
   const canvas = document.getElementById("canvas");
   const overlay = document.getElementById("overlay");
   const ctxOverlay = overlay.getContext("2d");
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.10 && areaRatio <= 0.18;
+        const isFaceBigEnough = areaRatio > 0.18 && areaRatio <= 0.22;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
@@ -183,7 +184,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   captureBtn.onclick = () => {
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
 
     canvas.toBlob((blob) => {
       const formData = new FormData();
@@ -199,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(console.error);
     }, "image/png");
   };
+
 
   function loadGallery() {
     fetch("/list-encoded-images")
