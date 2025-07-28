@@ -76,8 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const noseOffset = Math.abs(eyeCenterX - noseX);
 
         const paddingW = oblongWidth * 0.2;
-        const paddingTop = oblongHeight * 0.25;
-        const paddingBottom = oblongHeight * 0.1;
+        const paddingTop = oblongHeight * 0.15;
+        const paddingBottom = oblongHeight * 0.15;
 
         const isFaceCentered =
           faceCenterX > oblongX + paddingW &&
@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // NEW: Ensure top of face is visible
         const isTopVisible = y < ellipseY - oblongHeight / 5;
 
-        if (isFaceBigEnough && isFaceCentered && isUpright && isTopVisible) {
+        if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
           message = "";
         } else if (!isFaceBigEnough) {
@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   decodeBtnGallery.onclick = () => {
     if (!selectedFilename) return;
-    fetch("/decode-image?filename=${selectedFilename}")
+    fetch(`/decode-image?filename=${selectedFilename}`)
       .then((res) => res.json())
       .then((data) => {
         decodedMessageGallery.textContent = "🧩 Decoded Key: " + data.message;
