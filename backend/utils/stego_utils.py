@@ -37,7 +37,7 @@ def encode_image(input_path: str, output_path: str, secret_text: str,
 
     # Step 4: Position at bottom-center
     x_wm = (w - wm_w) // 2
-    y_wm = h - wm_h - 5  # 10px margin from bottom
+    y_wm = h - wm_h - 20  # 10px margin from bottom
 
     # Step 5: Ensure watermark stays within image bounds
     x_wm = max(0, min(x_wm, w - wm_w))

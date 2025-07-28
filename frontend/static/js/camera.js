@@ -1,8 +1,11 @@
-
-
 document.addEventListener("DOMContentLoaded", () => {
   const con = document.getElementById("skeleton-loader-container");
   const loader = document.getElementById("skeleton-loader");
+  const previewPage = document.getElementById("previewPage");
+  const cameraPage = document.getElementById("cameraPage");
+  const previewImage = document.getElementById("previewImage");
+  const tryAgainBtn = document.getElementById("tryAgain");
+  const submitBtn = document.getElementById("submit");
   if (loader) {
     con.style.opacity = "1";
     loader.style.opacity = "1";
@@ -25,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedFilename = null;
   let loaderConHidden = false;
   let loaderHidden = false;
+  let stream = null;
+  let isSubmitting = false; // ✅ prevent duplicate
 
   async function loadModels() {
     await faceapi.nets.tinyFaceDetector.loadFromUri("/static/models");
@@ -38,11 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(async () => {
       // const isMobile = window.innerWidth < 500;
       const isMobile = window.matchMedia("(max-width: 500px)").matches;
-      console.log(isMobile)
+      console.log(isMobile);
 
       const oblongHeight = isMobile
         ? overlay.height * 0.75
-        : overlay.height * 0.70;
+        : overlay.height * 0.7;
       // const oblongWidth = isMobile ? overlay.width * 0.8 : oblongHeight * 0.65;
       const oblongWidth = isMobile ? overlay.width * 0.8 : overlay.width * 0.4;
 
@@ -79,20 +84,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const paddingTop = oblongHeight * 0.15;
         const paddingBottom = oblongHeight * 0.15;
 
-        // ✅ Top and Bottom positions
+        // ✅ Face edges
+        const faceLeft = x;
+        const faceRight = x + width;
         const faceTop = y;
         const faceBottom = y + height;
-        const topLimit = oblongY + paddingTop;
+
+        const leftLimit = oblongX + paddingW;
+        const rightLimit = oblongX + oblongWidth - paddingW;
+
+        const horizontalTolerance = oblongWidth * 0.1; // 10% tolerance
+
+        const isHorizontallyInside =
+          faceLeft >= leftLimit - horizontalTolerance &&
+          faceRight <= rightLimit + horizontalTolerance;
+
+        const isTopInside =
+          faceTop >= oblongY - oblongHeight * 0.1 &&
+          faceTop <= oblongY + paddingTop + oblongHeight * 0.2;
+
         const bottomLimit = oblongY + oblongHeight - paddingBottom;
+        const isBottomInside =
+          faceBottom >= bottomLimit - 80 && faceBottom <= bottomLimit + 40;
 
-        const isHorizontallyCentered =
-        faceCenterX > oblongX + paddingW &&
-        faceCenterX < oblongX + oblongWidth - paddingW;
-
-        const isTopInside = faceTop >= topLimit;
-        const isBottomInside = faceBottom <= bottomLimit;
-
-        const isFaceCentered = isHorizontallyCentered && isTopInside && isBottomInside;
+        const isFaceCentered =
+          isHorizontallyInside && isTopInside && isBottomInside;
 
         const isTooHigh = faceCenterY < oblongY + paddingTop;
         const isUpright = eyeSlope < 8 && noseOffset < 12;
@@ -100,25 +116,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 0.20 && areaRatio <= 0.30;
+        const isFaceBigEnough = areaRatio > 0.2 && areaRatio <= 0.32;
+        const isFaceTooClose = areaRatio > 0.32;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
-          message = "";
+          message = "✅ Perfect position! Hold still for a moment.";
+        } else if (isFaceTooClose) {
+          message = "📏 Move slightly back from the camera.";
         } else if (!isFaceBigEnough) {
-          message = "Move closer to the camera";
+          message = "📷 Move a bit closer to the camera.";
+        } else if (!isHorizontallyInside) {
+          message = "↔️ Move face to the center (left/right).";
         } else if (!isTopInside) {
-          message = "Lower your forehead to fit in frame";
+          message = "⬇️ Lower your forehead slightly.";
         } else if (!isBottomInside) {
-          message = "Raise your chin to fit in frame";
+          message = "⬆️ Lift your chin a little.";
         } else if (!isFaceCentered) {
           message = isTooHigh
-            ? "Lower your chin slightly"
-            : "Center your face in the frame";
+            ? "⬇️ Lower your chin slightly."
+            : "↔️ Center your face in the frame.";
         } else {
-          message = "Keep your head upright";
+          message = "↕️ Keep your head upright.";
         }
 
+        document.querySelector("#face_position").innerHTML = `${message}`;
         console.log("DEBUG ➤", {
           eyeSlope,
           noseOffset,
@@ -194,31 +216,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function setupCameraAndRunDetection() {
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: "user" } })
-      .then((stream) => {
+      .then((cameraStream) => {
+        stream = cameraStream;
         video.srcObject = stream;
         video.setAttribute("playsinline", true);
         video.addEventListener("loadeddata", () => {
           video.play().then(() => {
-            // Set a fixed, portrait-oriented working size
-            // const desiredWidth = 360;
-            // const desiredHeight = 480;
-
-            // overlay.width = desiredWidth;
-            // overlay.height = desiredHeight;
-            // canvas.width = desiredWidth;
-            // canvas.height = desiredHeight;
             overlay.width = video.videoWidth;
             overlay.height = video.videoHeight;
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            // Keep video resolution native, don't force width/height
-            // video.setAttribute("width", desiredWidth);
-            // video.setAttribute("height", desiredHeight);
-
-            // overlay.style.width = ${desiredWidth}px;
-            // overlay.style.height = ${desiredHeight}px;
-
             runDetection();
           });
         });
@@ -235,19 +242,32 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    canvas.toBlob((blob) => {
-      const formData = new FormData();
-      formData.append("image", blob, "captured.png");
-      formData.append("message", "hidden message here");
+    const dataURL = canvas.toDataURL("image/png");
 
-      fetch("/upload-image", {
-        method: "POST",
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then(() => loadGallery())
-        .catch(console.error);
-    }, "image/png");
+    // Show preview page
+    cameraPage.classList.add("hidden");
+    previewPage.classList.add("fade-in"); // ✅ animation
+    previewPage.classList.remove("hidden");
+    previewImage.src = dataURL;
+
+    // Stop camera
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
+    // canvas.toBlob((blob) => {
+    //   const formData = new FormData();
+    //   formData.append("image", blob, "captured.png");
+    //   formData.append("message", "hidden message here");
+
+    //   fetch("/upload-image", {
+    //     method: "POST",
+    //     body: formData,
+    //   })
+    //     .then((res) => res.json())
+    //     .then(() => loadGallery())
+    //     .catch(console.error);
+    // }, "image/png");
   };
 
   function loadGallery() {
@@ -277,6 +297,48 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(console.error);
   }
 
+  tryAgainBtn.onclick = () => {
+    previewPage.classList.add("hidden");
+    cameraPage.classList.remove("hidden");
+    setupCameraAndRunDetection();
+    // loadGallery()
+  };
+
+  submitBtn.onclick = () => {
+    if (isSubmitting) return; // ✅ avoid duplicate
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Submitting...";
+
+    canvas.toBlob((blob) => {
+      const formData = new FormData();
+      formData.append("image", blob, "captured.png");
+      formData.append("message", "hidden message here");
+
+      fetch("/upload-image", {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then(() => {
+          submitBtn.textContent = "✅ Submitted!";
+        })
+        .catch(console.error)
+        .finally(() => {
+          setTimeout(() => {
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit";
+            previewPage.classList.add("hidden");
+            cameraPage.classList.remove("hidden");
+            setupCameraAndRunDetection();
+            // loadGallery()
+          }, 2000);
+        });
+    }, "image/png");
+  };
+  
+
   decodeBtnGallery.onclick = () => {
     if (!selectedFilename) return;
     fetch(`/decode-image?filename=${selectedFilename}`)
@@ -287,5 +349,5 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(console.error);
   };
 
-  window.addEventListener("load", loadGallery);
+  // window.addEventListener("load", loadGallery);
 });

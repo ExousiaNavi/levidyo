@@ -45,6 +45,7 @@
 >
   <!-- 🔴 Live Camera Feed Section -->
   <div
+    id="cameraPage"
     class="flex flex-col p-1 md:p-6 bg-white rounded-2xl shadow-lg border border-gray-200 h-full"
   >
     <div class="flex items-center justify-center gap-2 mb-4 w-full">
@@ -67,7 +68,7 @@
     </div>
     <canvas id="canvas" class="hidden"></canvas>
 
-    <!-- <span class="text-red-500" id="face_position"></span> -->
+    <span class="text-red-500 p-2" id="face_position"></span>
     <button
       disabled
       id="capture"
@@ -76,9 +77,18 @@
       Capture
     </button>
   </div>
+  
+  <!-- Preview Page -->
+<div id="previewPage" class="hidden">
+  <img id="previewImage" class="rounded-lg border shadow-lg" />
+  <div class="mt-4 flex gap-4">
+    <button id="tryAgain" class="px-4 py-2 bg-gray-400 text-white rounded-lg">🔄 Try Again</button>
+    <button id="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg">✅ Submit</button>
+  </div>
+</div>
 
   <!-- 🟢 Encoded Image Gallery Section -->
-  <div
+  <!-- <div
     class="flex flex-col p-6 bg-white rounded-2xl shadow-lg border border-gray-200 h-full"
   >
     <div class="flex items-center gap-2 mb-4">
@@ -98,7 +108,7 @@
         id="encodedGallery"
         class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
       >
-        <!-- thumbnails inserted here -->
+        
       </div>
     </div>
 
@@ -113,7 +123,7 @@
       id="decodedMessageGallery"
       class="text-center mt-4 text-base text-gray-800 font-mono break-words whitespace-pre-wrap px-2"
     ></p>
-  </div>
+  </div> -->
 </div>
 
 <!-- Scrollbar + Thumbnail Hover Effects -->
