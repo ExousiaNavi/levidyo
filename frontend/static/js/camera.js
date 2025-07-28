@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
           isTooHigh,
           isUpright,
           isFaceBigEnough,
-          isTopVisible,
+          // isTopVisible,
           message,
         });
       }
