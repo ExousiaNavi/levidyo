@@ -1,3 +1,5 @@
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const con = document.getElementById("skeleton-loader-container");
   const loader = document.getElementById("skeleton-loader");
@@ -39,13 +41,100 @@ document.addEventListener("DOMContentLoaded", () => {
       const oblongHeight = isMobile
         ? overlay.height * 0.75
         : overlay.height * 0.65;
-      const oblongWidth = isMobile ? overlay.width * 0.8 : overlay.width * 0.6;
+      const oblongWidth = isMobile ? overlay.width * 0.8 : oblongHeight * 0.65;
+
       const oblongX = (overlay.width - oblongWidth) / 2;
-      const oblongY = (overlay.height - oblongHeight) / 2;
-      const ellipseX = oblongX + oblongWidth / 2;
+      const oblongY = (overlay.height - oblongHeight) / 2 - 50;
+
+      const centerX = overlay.width / 2;
+      const ellipseX = centerX;
       const ellipseY = oblongY + oblongHeight / 2;
 
+      let color = "red";
+      let message = "Align your face properly";
+
+      const result = await faceapi
+        .detectSingleFace(video, options)
+        .withFaceLandmarks();
+
+      if (result) {
+        const { x, y, width, height } = result.detection.box;
+        const faceCenterX = x + width / 2;
+        const faceCenterY = y + height / 2;
+
+        const landmarks = result.landmarks;
+        const leftEye = landmarks.getLeftEye();
+        const rightEye = landmarks.getRightEye();
+        const nose = landmarks.getNose();
+
+        const eyeSlope = Math.abs(leftEye[0].y - rightEye[3].y);
+        const eyeCenterX = (leftEye[0].x + rightEye[3].x) / 2;
+        const noseX = nose[3].x;
+        const noseOffset = Math.abs(eyeCenterX - noseX);
+
+        const paddingW = oblongWidth * 0.2;
+        const paddingTop = oblongHeight * 0.25;
+        const paddingBottom = oblongHeight * 0.1;
+
+        const isFaceCentered =
+          faceCenterX > oblongX + paddingW &&
+          faceCenterX < oblongX + oblongWidth - paddingW &&
+          faceCenterY > oblongY + paddingTop &&
+          faceCenterY < oblongY + oblongHeight - paddingBottom;
+
+        const isTooHigh = faceCenterY < oblongY + paddingTop;
+        const isUpright = eyeSlope < 8 && noseOffset < 12;
+
+        const faceArea = width * height;
+        const frameArea = overlay.width * overlay.height;
+        const areaRatio = faceArea / frameArea;
+        const isFaceBigEnough = areaRatio > 20 && areaRatio <= 30;
+
+        // NEW: Ensure top of face is visible
+        const isTopVisible = y < ellipseY - oblongHeight / 5;
+
+        if (isFaceBigEnough && isFaceCentered && isUpright && isTopVisible) {
+          color = "lime";
+          message = "";
+        } else if (!isFaceBigEnough) {
+          message = "Move closer to the camera";
+        } else if (!isTopVisible) {
+          message = "Lift your head to show your full face";
+        } else if (!isFaceCentered) {
+          message = isTooHigh
+            ? "Lower your chin slightly"
+            : "Center your face in the frame";
+        } else {
+          message = "Keep your head upright";
+        }
+
+        console.log("DEBUG ➤", {
+          eyeSlope,
+          noseOffset,
+          faceCenterX,
+          faceCenterY,
+          areaRatio,
+          isFaceCentered,
+          isTooHigh,
+          isUpright,
+          isFaceBigEnough,
+          isTopVisible,
+          message,
+        });
+      }
+
+      // UI Feedback
+      captureBtn.disabled = color !== "lime";
+      captureBtn.classList.toggle("opacity-50", color !== "lime");
+      if (statusText) statusText.textContent = message;
+
+      // Dim background
       ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
+      ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.67)";
+      ctxOverlay.fillRect(0, 0, overlay.width, overlay.height);
+
+      ctxOverlay.save();
+      ctxOverlay.globalCompositeOperation = "destination-out";
       ctxOverlay.beginPath();
       ctxOverlay.ellipse(
         ellipseX,
@@ -56,100 +145,39 @@ document.addEventListener("DOMContentLoaded", () => {
         0,
         Math.PI * 2
       );
-      ctxOverlay.strokeStyle = "black";
-      ctxOverlay.lineWidth = 2;
+      ctxOverlay.fill();
+      ctxOverlay.restore();
+
+      // Draw border
+      ctxOverlay.save();
+      ctxOverlay.beginPath();
+      ctxOverlay.ellipse(
+        ellipseX,
+        ellipseY,
+        oblongWidth / 2,
+        oblongHeight / 2,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctxOverlay.strokeStyle = color;
+      ctxOverlay.lineWidth = 4;
+      ctxOverlay.shadowBlur = 15;
+      ctxOverlay.shadowColor = color;
       ctxOverlay.stroke();
+      ctxOverlay.restore();
 
-      const detections = await faceapi
-        .detectSingleFace(video, options)
-        .withFaceLandmarks();
-
-      if (detections) {
-        const box = detections.detection.box;
-        const { x, y, width, height } = box;
-
-        const areaRatio = (width * height) / (overlay.width * overlay.height);
-        const isFaceBigEnough = areaRatio > 0.1;
-
-        const faceCenterX = x + width / 2;
-        const faceCenterY = y + height / 2;
-        const horizontalOffset = Math.abs(faceCenterX - ellipseX);
-        const verticalOffset = Math.abs(faceCenterY - ellipseY);
-        const isFaceCentered = horizontalOffset < oblongWidth / 4;
-        const isVerticallyCentered = verticalOffset < oblongHeight / 5;
-
-        const landmarks = detections.landmarks;
-        const leftEye = landmarks.getLeftEye();
-        const rightEye = landmarks.getRightEye();
-        const nose = landmarks.getNose();
-
-        const eyeSlope =
-          (rightEye[0].y - leftEye[3].y) / (rightEye[0].x - leftEye[3].x);
-        const isUpright = Math.abs(eyeSlope) < 0.2;
-
-        const isTooHigh = faceCenterY < ellipseY;
-
-        const topFaceThreshold = oblongY + oblongHeight * 0.1;
-        const isTopVisible = y < topFaceThreshold;
-
-        let color = "red";
-        let message = "";
-
-        if (
-          isFaceBigEnough &&
-          isFaceCentered &&
-          isUpright &&
-          // isTopVisible &&
-          isVerticallyCentered
-        ) {
-          color = "lime";
-          message = "";
-        } else if (!isFaceBigEnough) {
-          message = "Move closer to the camera";
-        } else if (!isTopVisible) {
-          message = "Lift your head slightly";
-        } else if (!isVerticallyCentered) {
-          message = "Center your full face — not too high or low";
-        } else if (!isFaceCentered) {
-          message = isTooHigh
-            ? "Lower your chin slightly"
-            : "Center your face in the frame";
-        } else {
-          message = "Keep your head upright";
-        }
-
-        ctxOverlay.beginPath();
-        ctxOverlay.rect(x, y, width, height);
-        ctxOverlay.strokeStyle = color;
-        ctxOverlay.lineWidth = 2;
-        ctxOverlay.stroke();
-
-        if (message) {
-          ctxOverlay.font = "16px sans-serif";
-          ctxOverlay.fillStyle = "black";
-          ctxOverlay.fillText(message, x, y - 10);
-        }
-
-        // Debug threshold line
-        ctxOverlay.beginPath();
-        ctxOverlay.moveTo(0, topFaceThreshold);
-        ctxOverlay.lineTo(overlay.width, topFaceThreshold);
-        ctxOverlay.strokeStyle = "rgba(255, 0, 0, 0.5)";
-        ctxOverlay.lineWidth = 1;
-        ctxOverlay.stroke();
-
-        console.log("DEBUG ➤", {
-          eyeSlope,
-          areaRatio,
-          isFaceBigEnough,
-          isFaceCentered,
-          isVerticallyCentered,
-          isUpright,
-          isTopVisible,
-          message,
-        });
+      // Hide loader
+      if (!loaderHidden && loader) {
+        con.style.opacity = "0";
+        loader.style.opacity = "0";
+        setTimeout(() => (loader.style.display = "none"), 400);
+        loaderHidden = true;
+        loaderConHidden = true;
+        document.querySelector("#mdh").classList.remove("hidden");
+        con.classList.add("hidden");
       }
-    }, 100);
+    }, 200);
   }
 
   function setupCameraAndRunDetection() {
