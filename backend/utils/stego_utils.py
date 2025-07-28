@@ -30,14 +30,14 @@ def encode_image(input_path: str, output_path: str, secret_text: str,
     wm_h, wm_w = watermark.shape[:2]
 
     # Step 3: Resize watermark to be bigger (e.g., 20% of image height)
-    target_height = h * 0.3
+    target_height = h * 0.25
     scale_factor = target_height / wm_h
     watermark = cv2.resize(watermark, (int(wm_w * scale_factor), int(wm_h * scale_factor)))
     wm_h, wm_w = watermark.shape[:2]
 
     # Step 4: Position at bottom-center
     x_wm = (w - wm_w) // 2
-    y_wm = h - wm_h - 10  # 10px margin from bottom
+    y_wm = h - wm_h - 5  # 10px margin from bottom
 
     # Step 5: Ensure watermark stays within image bounds
     x_wm = max(0, min(x_wm, w - wm_w))

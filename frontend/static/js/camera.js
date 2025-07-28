@@ -36,12 +36,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
 
     setInterval(async () => {
-      const isMobile = window.innerWidth < 500;
+      // const isMobile = window.innerWidth < 500;
+      const isMobile = window.matchMedia("(max-width: 500px)").matches;
+      console.log(isMobile)
 
       const oblongHeight = isMobile
         ? overlay.height * 0.75
-        : overlay.height * 0.65;
-      const oblongWidth = isMobile ? overlay.width * 0.8 : oblongHeight * 0.65;
+        : overlay.height * 0.70;
+      // const oblongWidth = isMobile ? overlay.width * 0.8 : oblongHeight * 0.65;
+      const oblongWidth = isMobile ? overlay.width * 0.8 : overlay.width * 0.4;
 
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2 - 50;
@@ -88,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const faceArea = width * height;
         const frameArea = overlay.width * overlay.height;
         const areaRatio = faceArea / frameArea;
-        const isFaceBigEnough = areaRatio > 20 && areaRatio <= 30;
+        const isFaceBigEnough = areaRatio > 0.20 && areaRatio <= 0.30;
 
         // NEW: Ensure top of face is visible
         const isTopVisible = y < ellipseY - oblongHeight / 5;
