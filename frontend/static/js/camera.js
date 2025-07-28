@@ -79,11 +79,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const paddingTop = oblongHeight * 0.15;
         const paddingBottom = oblongHeight * 0.15;
 
-        const isFaceCentered =
-          faceCenterX > oblongX + paddingW &&
-          faceCenterX < oblongX + oblongWidth - paddingW &&
-          faceCenterY > oblongY + paddingTop &&
-          faceCenterY < oblongY + oblongHeight - paddingBottom;
+        // ✅ Top and Bottom positions
+        const faceTop = y;
+        const faceBottom = y + height;
+        const topLimit = oblongY + paddingTop;
+        const bottomLimit = oblongY + oblongHeight - paddingBottom;
+
+        const isHorizontallyCentered =
+        faceCenterX > oblongX + paddingW &&
+        faceCenterX < oblongX + oblongWidth - paddingW;
+
+        const isTopInside = faceTop >= topLimit;
+        const isBottomInside = faceBottom <= bottomLimit;
+
+        const isFaceCentered = isHorizontallyCentered && isTopInside && isBottomInside;
 
         const isTooHigh = faceCenterY < oblongY + paddingTop;
         const isUpright = eyeSlope < 8 && noseOffset < 12;
@@ -93,16 +102,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const areaRatio = faceArea / frameArea;
         const isFaceBigEnough = areaRatio > 0.20 && areaRatio <= 0.30;
 
-        // NEW: Ensure top of face is visible
-        const isTopVisible = y < ellipseY - oblongHeight / 5;
-
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";
           message = "";
         } else if (!isFaceBigEnough) {
           message = "Move closer to the camera";
-        } else if (!isTopVisible) {
-          message = "Lift your head to show your full face";
+        } else if (!isTopInside) {
+          message = "Lower your forehead to fit in frame";
+        } else if (!isBottomInside) {
+          message = "Raise your chin to fit in frame";
         } else if (!isFaceCentered) {
           message = isTooHigh
             ? "Lower your chin slightly"
