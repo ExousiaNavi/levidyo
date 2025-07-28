@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const con = document.getElementById("skeleton-loader-container");
   const loader = document.getElementById("skeleton-loader");
   const previewPage = document.getElementById("previewPage");
@@ -29,18 +29,42 @@ document.addEventListener("DOMContentLoaded", () => {
   let loaderConHidden = false;
   let loaderHidden = false;
   let stream = null;
+  let detectionInterval = null;
   let isSubmitting = false; // ✅ prevent duplicate
+  let modelsLoaded = false;
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+    }
 
-  async function loadModels() {
-    await faceapi.nets.tinyFaceDetector.loadFromUri("/static/models");
-    await faceapi.nets.faceLandmark68Net.loadFromUri("/static/models");
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+      detectionInterval = null;
+    }
   }
 
+  async function loadModels() {
+    if (modelsLoaded) return; // ✅ Skip if already loaded
+
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri("/static/models"),
+      faceapi.nets.faceLandmark68Net.loadFromUri("/static/models"),
+    ]);
+
+    modelsLoaded = true;
+  }
+
+  await loadModels(); // ✅ Load at startup only
+  setupCameraAndRunDetection();
+
   async function runDetection() {
-    await loadModels();
+    // await loadModels();
     const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
 
-    setInterval(async () => {
+    if (detectionInterval) clearInterval(detectionInterval);
+
+    detectionInterval = setInterval(async () => {
       // const isMobile = window.innerWidth < 500;
       const isMobile = window.matchMedia("(max-width: 500px)").matches;
       console.log(isMobile);
@@ -214,6 +238,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setupCameraAndRunDetection() {
+    if (stream) {
+      // ✅ Camera already running → just restart detection
+      runDetection();
+      return;
+    }
+    // stopCamera()
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: "user" } })
       .then((cameraStream) => {
@@ -226,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
             overlay.height = video.videoHeight;
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            runDetection();
+            runDetection(); // ✅ detection starts instantly on first load
           });
         });
       })
@@ -242,32 +272,40 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    const dataURL = canvas.toDataURL("image/png");
-
-    // Show preview page
-    cameraPage.classList.add("hidden");
-    previewPage.classList.add("fade-in"); // ✅ animation
-    previewPage.classList.remove("hidden");
-    previewImage.src = dataURL;
-
-    // Stop camera
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+      detectionInterval = null;
     }
 
-    // canvas.toBlob((blob) => {
-    //   const formData = new FormData();
-    //   formData.append("image", blob, "captured.png");
-    //   formData.append("message", "hidden message here");
+    // Freeze preview
+    const frozenFrame = document.createElement("img");
+    frozenFrame.src = canvas.toDataURL("image/png");
+    frozenFrame.id = "frozenFrame";
+    frozenFrame.className = "absolute top-0 left-0 w-full h-full object-cover";
+    cameraPage.appendChild(frozenFrame);
+    video.classList.add("hidden");
 
-    //   fetch("/upload-image", {
-    //     method: "POST",
-    //     body: formData,
-    //   })
-    //     .then((res) => res.json())
-    //     .then(() => loadGallery())
-    //     .catch(console.error);
-    // }, "image/png");
+    document.getElementById("captureLoader").classList.remove("hidden");
+
+    canvas.toBlob((blob) => {
+      const formData = new FormData();
+      formData.append("image", blob, "captured.png");
+      formData.append("message", "hidden message here");
+
+      fetch("/upload-image", { method: "POST", body: formData })
+        .then((res) => res.json())
+        .then((data) => {
+          submitBtn.textContent = "✅ Next";
+          cameraPage.classList.add("hidden");
+          previewPage.classList.add("fade-in");
+          previewPage.classList.remove("hidden");
+          previewImage.src = data.image_url;
+        })
+        .catch(console.error)
+        .finally(() => {
+          document.getElementById("captureLoader").classList.add("hidden");
+        });
+    }, "image/png");
   };
 
   function loadGallery() {
@@ -300,44 +338,69 @@ document.addEventListener("DOMContentLoaded", () => {
   tryAgainBtn.onclick = () => {
     previewPage.classList.add("hidden");
     cameraPage.classList.remove("hidden");
-    setupCameraAndRunDetection();
+
+    const frozenFrame = document.getElementById("frozenFrame");
+    if (frozenFrame) frozenFrame.remove();
+
+    video.classList.remove("hidden");
+
+    // ✅ Do NOT restart camera
+    if (!detectionInterval) {
+      runDetection();
+    }
+
     // loadGallery()
   };
 
   submitBtn.onclick = () => {
-    if (isSubmitting) return; // ✅ avoid duplicate
-    isSubmitting = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "⏳ Submitting...";
+    isSubmitting = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = "✅ Next";
+    previewPage.classList.add("hidden");
+    cameraPage.classList.remove("hidden");
 
-    canvas.toBlob((blob) => {
-      const formData = new FormData();
-      formData.append("image", blob, "captured.png");
-      formData.append("message", "hidden message here");
+    const frozenFrame = document.getElementById("frozenFrame");
+    if (frozenFrame) frozenFrame.remove();
 
-      fetch("/upload-image", {
-        method: "POST",
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then(() => {
-          submitBtn.textContent = "✅ Submitted!";
-        })
-        .catch(console.error)
-        .finally(() => {
-          setTimeout(() => {
-            isSubmitting = false;
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Submit";
-            previewPage.classList.add("hidden");
-            cameraPage.classList.remove("hidden");
-            setupCameraAndRunDetection();
-            // loadGallery()
-          }, 2000);
-        });
-    }, "image/png");
+    video.classList.remove("hidden");
+
+    // ✅ Do NOT restart camera
+    if (!detectionInterval) {
+      runDetection();
+    }
+    // setupCameraAndRunDetection();
+    // if (isSubmitting) return; // ✅ avoid duplicate
+    // isSubmitting = true;
+    // submitBtn.disabled = true;
+    // submitBtn.textContent = "⏳ Submitting...";
+
+    // canvas.toBlob((blob) => {
+    //   const formData = new FormData();
+    //   formData.append("image", blob, "captured.png");
+    //   formData.append("message", "hidden message here");
+
+    //   fetch("/upload-image", {
+    //     method: "POST",
+    //     body: formData,
+    //   })
+    //     .then((res) => res.json())
+    //     .then(() => {
+    //       submitBtn.textContent = "✅ Submitted!";
+    //     })
+    //     .catch(console.error)
+    //     .finally(() => {
+    //       setTimeout(() => {
+    //         isSubmitting = false;
+    //         submitBtn.disabled = false;
+    //         submitBtn.textContent = "Submit";
+    //         previewPage.classList.add("hidden");
+    //         cameraPage.classList.remove("hidden");
+    //         setupCameraAndRunDetection();
+    //         // loadGallery()
+    //       }, 2000);
+    //     });
+    // }, "image/png");
   };
-  
 
   decodeBtnGallery.onclick = () => {
     if (!selectedFilename) return;
@@ -348,6 +411,4 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(console.error);
   };
-
-  // window.addEventListener("load", loadGallery);
 });

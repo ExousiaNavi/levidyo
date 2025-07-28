@@ -60,6 +60,7 @@ async def camera_page(request: Request):
                 "nav_links": NAV_LINKS_CRM,
                 "current_page": "Camera",
             })
+        
 @router.post("/upload-image")
 async def upload_image(image: UploadFile, message: str = Form(...)):
     try:
