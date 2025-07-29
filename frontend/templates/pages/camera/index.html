@@ -77,27 +77,79 @@
       Capture
     </button>
   </div>
-  
+
   <!-- Preview Page -->
-<div id="previewPage" class="hidden">
-  <img id="previewImage" class="rounded-lg border shadow-lg" />
-  <div class="mt-4 flex gap-4">
-    <button id="tryAgain" class="px-4 py-2 bg-gray-400 text-white rounded-lg">🔄 Try Again</button>
-    <button id="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg">✅ Next</button>
+  <div id="previewPage" class="hidden">
+    <img id="previewImage" class="rounded-lg border shadow-lg" />
+    <div class="mt-4 flex gap-4">
+      <button id="tryAgain" class="px-4 py-2 bg-gray-400 text-white rounded-lg">
+        🔄 Try Again
+      </button>
+      <button id="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg">
+        ✅ Next
+      </button>
+    </div>
   </div>
-</div>
 
-<div id="captureLoader" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm z-50 transition-opacity duration-300">
-  <div class="bg-gray-900 px-6 py-5 rounded-2xl shadow-lg flex flex-col items-center space-y-4 w-72">
-    <!-- Spinner -->
-    <div class="w-14 h-14 border-4 border-blue-400 border-t-transparent rounded-full animate-spin shadow-md"></div>
-    <!-- Text -->
-    <p class="text-gray-100 text-lg font-medium tracking-wide">Processing your image...</p>
-    <!-- Subtext -->
-    <p class="text-gray-400 text-sm">Please wait, this may take a few seconds.</p>
+  <!-- Capture Loader for face -->
+  <div
+    id="captureLoader"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm z-50 transition-opacity duration-300"
+  >
+    <div
+      class="bg-gray-900 px-6 py-5 rounded-2xl shadow-lg flex flex-col items-center space-y-4 w-72"
+    >
+      <!-- Spinner -->
+      <div
+        class="w-14 h-14 border-4 border-blue-400 border-t-transparent rounded-full animate-spin shadow-md"
+      ></div>
+      <!-- Text -->
+      <p class="text-gray-100 text-lg font-medium tracking-wide">
+        Processing your image...
+      </p>
+      <!-- Subtext -->
+      <p class="text-gray-400 text-sm">
+        Please wait, this may take a few seconds.
+      </p>
+    </div>
   </div>
-</div>
 
+  <!-- ID Capture Page -->
+  <div id="idCapturePage" class="hidden">
+    <div class="flex flex-col items-center">
+      <h2 id="idCaptureTitle" class="text-xl font-semibold mb-4">Capture Front of ID</h2>
+      <div class="relative w-full max-w-[23rem] mx-auto aspect-[3/4] bg-black rounded-xl overflow-hidden border border-gray-300 shadow-sm">
+        <video id="idVideo" class="absolute inset-0 w-full h-full object-cover z-10" autoplay playsinline muted></video>
+        <canvas id="idOverlay" class="absolute inset-0 z-20"></canvas>
+      </div>
+      <canvas id="idCanvas" class="hidden"></canvas>
+      <button id="switchCamera" class="p-2 bg-gray-700 text-white rounded">🔄 Switch Camera</button>
+      <button id="captureID" class="mt-4 px-6 py-3 bg-green-600 text-white rounded-xl text-lg font-semibold shadow hover:bg-green-700">📷 Capture ID</button>
+    </div>
+  </div>
+
+  <!-- Final Review Page -->
+  <div id="finalReviewPage" class="hidden p-4">
+    <h2 class="text-xl font-bold mb-4">Review Your Captures</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <h3>Face</h3>
+        <img id="reviewFace" class="w-full rounded-lg border shadow" />
+        <button id="retryFace" class="mt-2 px-3 py-2 bg-yellow-500 text-white rounded">🔄 Retry</button>
+      </div>
+      <div>
+        <h3>ID Front</h3>
+        <img id="reviewFront" class="w-full rounded-lg border shadow" />
+        <button id="retryFront" class="mt-2 px-3 py-2 bg-yellow-500 text-white rounded">🔄 Retry</button>
+      </div>
+      <div>
+        <h3>ID Back</h3>
+        <img id="reviewBack" class="w-full rounded-lg border shadow" />
+        <button id="retryBack" class="mt-2 px-3 py-2 bg-yellow-500 text-white rounded">🔄 Retry</button>
+      </div>
+    </div>
+    <button id="finalSubmit" class="mt-4 px-6 py-3 bg-green-600 text-white rounded-xl text-lg font-semibold shadow hover:bg-green-700">✅ Submit All</button>
+  </div>
 
 
   <!-- 🟢 Encoded Image Gallery Section -->
@@ -170,5 +222,5 @@
 
 <!-- ✅ Face + Camera Scripts -->
 <script src="/static/js/face-api.js?v=2"></script>
-<script src="/static/js/camera.js?v=10"></script>
+<script src="/static/js/camerav2.js?v=10"></script>
 {% endblock %}
