@@ -1,0 +1,134 @@
+{% macro badge_class_with_arrow(delta) %}
+  {% set ns = namespace(svg='', class='') %}
+  {% if delta >= 11 %}
+    {% set ns.svg = "<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 19V5m0 0l-6 6m6-6l6 6'/></svg>" %}
+    {% set ns.class = "text-green-700 bg-green-100" %}
+  {% elif delta >= 1 %}
+    {% set ns.svg = "<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 17L17 7m0 0h-6m6 0v6'/></svg>" %}
+    {% set ns.class = "text-blue-700 bg-blue-100" %}
+  {% elif delta > -11 %}
+    {% set ns.svg = "<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 7l10 10m0 0h-6m6 0v-6'/></svg>" %}
+    {% set ns.class = "text-orange-700 bg-orange-100" %}
+  {% elif delta <= -11 %}
+    {% set ns.svg = "<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 5v14m0 0l6-6m-6 6l-6-6'/></svg>" %}
+    {% set ns.class = "text-red-700 bg-red-100" %}
+  {% else %}
+    {% set ns.svg = "<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 12h14'/></svg>" %}
+    {% set ns.class = "text-gray-600 bg-gray-100" %}
+  {% endif %}
+  {{ ns.svg | safe }}::{{ ns.class }}
+{% endmacro %}
+
+{% macro deposit_card(kpis, target, history_log, current_datetime, brands, available_currencies) %}
+<div data-id="1" class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 history-btn cursor-pointer transition transform hover:scale-[1.02] duration-300 ease-in-out">
+
+  <!-- Header -->
+<div class="flex flex-col sm:justify-between sm:items-start gap-2">
+
+  <!-- Filters (Brand, Currency) -->
+  <div class="flex justify-between items-center gap-2 w-full">
+    <h2 id="dp-title" class="text-lg font-bold text-green-700">Deposit</h2>
+    <div class="flex gap-2 items-center w-fit">
+
+        <!-- <button data-id="1" class="history-btn text-gray-400 hover:text-gray-600 w-full flex items-center gap-1" title="History" type="button">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>History</span>
+        </button>
+
+        <span class="text-gray-400">|</span> -->
+        <button class="refresh-btn text-gray-400 hover:text-gray-600 w-full flex items-center gap-1" title="Refresh" onclick="location.reload()">
+        <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+          <span>Refresh</span>
+        </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="" id="stats-deposit-container">
+    <div class="text-xs text-gray-600 flex items-center gap-4 mt-1">
+      <span>Hourly Dp. 
+        <strong class="text-gray-900" id="td_deposit">
+          <span class="symbol text-base font-extrabold"></span>
+          <span class="value">{{ kpis.today_deposit | round(0) }}</span>
+        </strong>
+      </span>
+      <span>Cum. Dp. 
+        <strong class="text-gray-900" id="ld_cumulative">
+          <span class="symbol text-base font-extrabold"></span>
+          <span class="value">{{ kpis.today_cumulative | round(0) }}</span>
+        </strong>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+  <!-- Deposit Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="deposit-container">
+    {% for label, value in {
+      'HDoD': kpis.hdod,
+      'HWoW': kpis.hwow,
+      'CDoD': kpis.cdod,
+      'CWoW': kpis.cwow
+    }.items() %}
+      {% set arrow_svg, css_class = badge_class_with_arrow(value or 0).split('::') %}
+      <div class="p-3 rounded-lg shadow-sm {{ css_class }} flex flex-col items-center justify-center">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4">{{ arrow_svg | safe }}</div>
+          <span class="text-sm font-semibold">{{ value or 0 }}%</span>
+        </div>
+        <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">{{ label }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Target Progress -->
+  <div id="target_progress_container" class="space-y-1 text-xs">
+    <div class="flex justify-between">
+      <span>Last Day Dp. 
+        <strong class="text-gray-800" id="lastd_deposit">
+          <span class="symbol text-base font-extrabold"></span>
+          <span class="value">{{ kpis.ld_deposit | round(0) }}</span>
+        </strong>
+      </span>
+    </div>
+
+    <div class="flex justify-between text-gray-600">
+      <span>Target:</span>
+      <span id="target-amount" class="font-semibold text-gray-800">{{ target | round(0) }}</span>
+    </div>
+    <div class="border rounded-full bg-gray-100">
+        <div class="w-full h-2 rounded-full" id="progress-fill">
+            <div class="h-2 bg-green-500 rounded-full" style="width: '{{ ((kpis.ld_deposit or 0) / (target or 1) * 100) | round(1) }}%'"></div>
+        </div>
+    </div>
+    <div id="dp-time" class="text-right text-[10px] text-gray-400">{{ current_datetime }}</div>
+  </div>
+
+  <!-- Deposit History -->
+  <!-- <div class="bg-gray-50 border rounded-lg p-4">
+    <h3 class="text-sm font-semibold text-gray-700 mb-3">🕘 History Log – {{ current_datetime.split('–')[0].strip() }}</h3>
+    <ul class="space-y-2 max-h-[400px] overflow-y-auto pr-1 text-xs text-gray-700">
+      {% for entry in history_log %}
+        <li class="bg-white border rounded-lg p-2 shadow-sm hover:shadow transition">
+          <div class="flex justify-between font-medium mb-1">
+            <span class="text-green-700">HR-{{ entry.time }}</span>
+            <span class="text-gray-800">₱{{ entry.amount | round(0) }}</span>
+          </div>
+          <div class="flex flex-wrap gap-1">
+            {% for label in ['hdod', 'hwow', 'cdod', 'cwow'] %}
+              {% set arrow_svg, css_class = badge_class_with_arrow(entry[label] or 0).split('::') %}
+              <span class="flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ css_class }}">
+                {{ arrow_svg | safe }} {{ label.upper() }}: {{ entry[label] or 0 }}%
+              </span>
+            {% endfor %}
+          </div>
+        </li>
+      {% else %}
+        <li class="text-gray-400 italic">No records available.</li>
+      {% endfor %}
+    </ul>
+  </div> -->
+</div>
+{% endmacro %}
+

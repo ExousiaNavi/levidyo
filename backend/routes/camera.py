@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse,RedirectResponse
 # from backend.core.firebase import auth as firebase_auth, db
 from backend.core.templates import templates
 from backend.core.auth import USERS #for demo purposes login
-from backend.utils.stego_utils import encode_image,decode_image
+from backend.utils.stego_utils import encode_image,encode_text_image,decode_image
 from backend.core.auth import check_auth, NAV_LINKS, NAV_LINKS_CRM
 from datetime import timedelta, datetime
 # import json
@@ -20,7 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # <- adjust based on f
 STATIC_DIR = BASE_DIR / "frontend" / "static"
 STATIC_DIR_LOGO = BASE_DIR / "frontend" / "static" / "logo" / "lg.png"
 UPLOAD_DIR = STATIC_DIR / "uploads"
+UPLOAD_ID_DIR = STATIC_DIR / "upload_ids"
 ENCODED_DIR = STATIC_DIR / "encoded"
+ENCODED_ID_DIR = STATIC_DIR / "encoded_id"
 HAAR_CASCADE_PATH = STATIC_DIR / "haarcascades" / "haarcascade_frontalface_default.xml" 
 
 # Make sure directories exist
@@ -60,7 +62,84 @@ async def camera_page(request: Request):
                 "nav_links": NAV_LINKS_CRM,
                 "current_page": "Camera",
             })
-        
+
+# id logic
+@router.post("/verify-id")
+async def verify_id(
+    image: UploadFile = File(...),
+    side: str = Form(...)  # "idFront" or "idBack"
+):
+    try:
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"id_{side}_{timestamp}_{uuid.uuid4().hex}.png"
+        save_path = UPLOAD_ID_DIR / filename
+
+        # Save the original image
+        with open(save_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+
+        # Here you would add your ID verification logic
+        # For example:
+        verification_result = verify_id_image(str(save_path), side)
+
+        if not verification_result["valid"]:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "valid": False,
+                    "message": verification_result.get("message", "ID verification failed"),
+                    "details": verification_result.get("details", {})
+                }
+            )
+
+        # Generate secret code to embed
+        code = generate_random_message(16)
+        output_path = ENCODED_ID_DIR / filename
+        # Encode 
+        encode_text_image(str(save_path), str(output_path), code)
+
+        return JSONResponse({
+            "valid": True,
+            "message": "ID verified successfully",
+            "image_url": f"/static/encoded_id/{filename}",
+            "filename": filename,
+            "details": verification_result.get("details", {})
+        })
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "valid": False,
+                "message": f"ID verification error: {str(e)}"
+            }
+        )
+
+
+# Example verification function (you would implement your actual logic here)
+def verify_id_image(image_path: str, side: str) -> dict:
+    """
+    Placeholder for actual ID verification logic
+    Returns dict with at least {'valid': bool, 'message': str}
+    """
+    # Add your actual verification logic here
+    # This might include:
+    # - OCR to read ID information
+    # - Template matching for ID type
+    # - Security feature detection
+    # - Front/back consistency checks
+    
+    return {
+        "valid": True,  # Replace with actual verification
+        "message": "Verification passed",
+        "details": {
+            "side": side,
+            # Add any extracted information here
+        }
+    }
+
+# face logic
 @router.post("/upload-image")
 async def upload_image(image: UploadFile, message: str = Form(...)):
     try:
@@ -97,11 +176,62 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
 
         return JSONResponse({
             "message": "Image encoded and saved successfully.",
-            "image_url": f"/static/encoded/{filename}"
+            "image_url": f"/static/encoded/{filename}",
+            "filename" : filename
         })
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": f"Encoding failed: {str(e)}"})
+
+
+@router.delete("/delete-image")
+async def delete_image(request: Request):
+    try:
+        data = await request.json()
+        filename = data.get("filename")
+        if not filename:
+            return JSONResponse(status_code=400, content={"detail": "Filename is required"})
+
+        input_path = UPLOAD_DIR / filename
+        encoded_path = ENCODED_DIR / filename
+
+        deleted_files = []
+        for file_path in [input_path, encoded_path]:
+            if file_path.exists():
+                file_path.unlink()
+                deleted_files.append(str(file_path))
+
+        return JSONResponse({
+            "message": "File(s) deleted successfully",
+            "deleted": deleted_files
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+    
+@router.delete("/delete-image-id")
+async def delete_image_id(request: Request):
+    try:
+        data = await request.json()
+        filename = data.get("filename")
+        if not filename:
+            return JSONResponse(status_code=400, content={"detail": "Filename is required"})
+
+        input_path = UPLOAD_ID_DIR / filename
+        encoded_path = ENCODED_ID_DIR / filename
+
+        deleted_files = []
+        for file_path in [input_path, encoded_path]:
+            if file_path.exists():
+                file_path.unlink()
+                deleted_files.append(str(file_path))
+
+        return JSONResponse({
+            "message": "File(s) deleted successfully",
+            "deleted": deleted_files
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+    
 
 @router.get("/decode-image")
 async def decode_image_from_file(filename: str):

@@ -1,0 +1,1067 @@
+{% extends "base.html" %} {% import 'pages/admin/components/deposit-card.html'
+as depositCard %} {% import 'pages/admin/components/withdraw-card.html' as
+withdrawCard %} {% import 'pages/admin/components/pending-deposit-card.html' as
+pendingDepositCard %} {% import
+'pages/admin/components/pending-withdraw-card.html' as pendingWithdrawCard %}
+<!-- {% import 'pages/admin/components/deposit-chart.html' as charts %}  -->
+{% block content %}
+
+<!-- Skeleton Loader -->
+<div
+  id="skeleton-loader"
+  class="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse p-4"
+>
+  <!-- Left: Deposit Overview Placeholder -->
+  <div class="space-y-4">
+    <!-- Title Placeholder -->
+    <div class="h-6 w-1/3 bg-gray-300 rounded"></div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="h-24 bg-gray-200 rounded-lg"></div>
+      <div class="h-24 bg-gray-200 rounded-lg"></div>
+      <div class="h-24 bg-gray-200 rounded-lg"></div>
+    </div>
+
+    <!-- Deposit Log Placeholder -->
+    <div class="h-[calc(100vh-250px)] bg-gray-200 rounded-lg"></div>
+  </div>
+
+  <!-- Right: Charts Placeholder -->
+  <div class="space-y-4">
+    <div
+      class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center"
+    >
+      <div class="h-6 w-1/4 bg-gray-300 rounded mb-2"></div>
+      <div class="h-40 w-11/12 bg-gray-300 rounded"></div>
+    </div>
+    <div
+      class="h-64 bg-gray-200 rounded-lg flex flex-col justify-center items-center"
+    >
+      <div class="h-6 w-1/4 bg-gray-300 rounded mb-2"></div>
+      <div class="h-40 w-11/12 bg-gray-300 rounded"></div>
+    </div>
+  </div>
+</div>
+
+<!-- History Content -->
+<div id="dashboard-content-history" class="hidden">
+  <div class="p-4 w-full bg-green-100 flex items-center gap-2">
+    <button id="back_btn" class="text-gray-600 hover:text-gray-800">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </button>
+    <h2 class="text-xl font-semibold text-gray-700">History</h2>
+  </div>
+
+  <div
+    id="dp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="wp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="pwp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+  <div
+    id="pdp-history-parent"
+    class="hidden grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+  ></div>
+</div>
+
+<!-- Dashboard Content Wrapper -->
+<div
+  id="dashboard-content"
+  class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+>
+  <!-- <div class="p-4 w-full bg-green-100 col-span-1 lg:col-span-2">
+    <h2 class="text-xl font-semibold text-gray-700">👋 Hello, {{ user.email }}</h2>
+  </div> -->
+  <!-- 🟢 Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Deposit Overview Card -->
+    <div id="deposit-card" class="h-full">
+      {{ depositCard.deposit_card(kpis, target, history_log, current_datetime,
+      brands, available_currencies) }}
+    </div>
+
+    <!-- Charts Section -->
+    <!-- <div id="charts" class="grid grid-cols-1 gap-3">
+      <div class="bg-white shadow rounded-lg p-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Hourly Chart</h3>
+        <canvas id="hourlyChart" class="w-full h-64"></canvas>
+      </div>
+
+      <div id="prev-chart" class="bg-white shadow rounded-lg p-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Previous Day Chart</h3>
+        <canvas id="previousDayChart" class="w-full h-64"></canvas>
+      </div>
+    </div> -->
+  </div>
+
+  <!-- 🟢 Withdraw Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="withdraw-deposit-container" class="h-full">
+      {{ withdrawCard.withdraw_card(kpis, target, history_log, current_datetime,
+      brands, available_currencies) }}
+    </div>
+  </div>
+
+  <!-- 🟢 Pending Deposit Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="pending-deposit-container" class="h-full">
+      {{ pendingDepositCard.pending_deposit_card() }}
+    </div>
+  </div>
+
+  <!-- 🟢 Pending Withdraw Section -->
+  <div class="flex flex-col gap-3 h-full">
+    <!-- Pending Deposit Overview Card -->
+    <div id="pending-withdraw-deposit-container" class="h-full">
+      {{ pendingWithdrawCard.pending_withdraw_card() }}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  let hourlyChart, previousDayChart;
+
+  function formatNumber(value, currency) {
+    const currencySymbols = {
+      PKR: "₨",
+      BDT: "৳",
+      INR: "₹",
+    };
+
+    const currencyLocaleMap = {
+      PKR: "en-PK",
+      BDT: "en-BD",
+      INR: "en-IN",
+    };
+
+    const upperCurrency = String(currency || "").toUpperCase();
+    const symbol = currencySymbols[upperCurrency] || "";
+    const locale = currencyLocaleMap[upperCurrency] || "en-US";
+
+    const formattedNumber = Number(value).toLocaleString(locale, {
+      style: "decimal",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return {
+      symbol, // e.g., "৳"
+      value: formattedNumber, // e.g., "132,508,423.31"
+      currency: upperCurrency, // e.g., "BDT"
+    };
+  }
+
+  function updatePendingWithdraw(
+    kpis,
+    target,
+    $container,
+    time,
+    brand,
+    currency
+  ) {
+    const metrics = [
+      {
+        label: "Pending Wd. Amount",
+        value: kpis.total_pending_withdraw_amount,
+      },
+      { label: "Pending Wd. Count", value: kpis.total_pending_withdraw_count },
+      { label: "Average Time", value: kpis.average_pending_time },
+    ];
+    metrics.forEach((metric) => {
+      const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      let val = formatNumber(metric.value, currency);
+      $container.append(`
+        <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold">${val.value ?? 0}</span>
+          </div>
+          <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
+            metric.label
+          }</div>
+        </div>
+      `);
+    });
+    $("#pw-time").text(time);
+    const percentage = 0;
+    $("#progress-fill-pending-wd").animate({ width: `${percentage}%` }, 600);
+  }
+
+  function updatePendingDeposit(
+    kpis,
+    target,
+    $container,
+    time,
+    brand,
+    currency
+  ) {
+    const metrics = [
+      { label: "Pending Dp. Amount", value: kpis.total_pending_deposit_amount },
+      { label: "Pending Dp. Count", value: kpis.total_pending_deposit_count },
+      { label: "Average Time", value: kpis.average_pending_time },
+    ];
+    metrics.forEach((metric) => {
+      const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      let val = formatNumber(metric.value, currency);
+      $container.append(`
+        <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold">${val.value ?? 0}</span>
+          </div>
+          <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
+            metric.label
+          }</div>
+        </div>
+      `);
+    });
+    const percentage = 0;
+    $("#progress-fill-deposit").animate({ width: `${percentage}%` }, 600);
+    $("#pdp-time").text(time);
+  }
+
+  function getBadgeClassAndArrow(delta) {
+    let svg = "",
+      cssClass = "";
+    if (delta >= 11) {
+      svg = `<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 19V5m0 0l-6 6m6-6l6 6'/></svg>`;
+      cssClass = "text-green-700 bg-green-100";
+    } else if (delta >= 1) {
+      svg = `<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 17L17 7m0 0h-6m6 0v6'/></svg>`;
+      cssClass = "text-blue-700 bg-blue-100";
+    } else if (delta > -11) {
+      svg = `<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 7l10 10m0 0h-6m6 0v-6'/></svg>`;
+      cssClass = "text-orange-700 bg-orange-100";
+    } else if (delta <= -11) {
+      svg = `<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 5v14m0 0l6-6m-6 6l-6-6'/></svg>`;
+      cssClass = "text-red-700 bg-red-100";
+    } else {
+      svg = `<svg class='w-4 h-4 mr-1 shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 12h14'/></svg>`;
+      cssClass = "text-gray-600 bg-gray-100";
+    }
+    return { svg, cssClass };
+  }
+
+  function updateDeposit(kpis, target, $container, time, brand, currency) {
+    const metrics = [
+      { label: "HDoD", value: kpis.hdod },
+      { label: "HWoW", value: kpis.hwow },
+      { label: "CDoD", value: kpis.cdod },
+      { label: "CWoW", value: kpis.cwow },
+    ];
+    metrics.forEach((metric) => {
+      const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      $container.append(`
+        <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4">${svg}</div>
+            <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
+          </div>
+          <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+            metric.label
+          }</div>
+        </div>
+      `);
+    });
+    $("#dp-time").text(time);
+    const today = formatNumber(kpis.today_deposit, currency);
+    const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
+    const lastd = formatNumber(kpis.ld_deposit, currency);
+    const targetAmount = formatNumber(target, currency);
+
+    $("#td_deposit .value").text(today.value);
+    $("#td_deposit .symbol").text(today.symbol);
+
+    $("#ld_cumulative .value").text(ldCumulative.value);
+    $("#ld_cumulative .symbol").text(ldCumulative.symbol);
+
+    $("#lastd_deposit .value").text(lastd.value);
+    //$("#lastd_deposit .symbol").text(lastd.symbol);
+
+    $("#target-amount").text(targetAmount.value);
+    const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
+    $("#progress-fill").animate({ width: `${percentage}%` }, 600);
+  }
+
+  function updateWithdraw(kpis, target, $container, time, brand, currency) {
+    const metrics = [
+      { label: "HDoD", value: kpis.hdod },
+      { label: "HWoW", value: kpis.hwow },
+      { label: "CDoD", value: kpis.cdod },
+      { label: "CWoW", value: kpis.cwow },
+    ];
+    metrics.forEach((metric) => {
+      const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+      $container.append(`
+        <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4">${svg}</div>
+            <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
+          </div>
+          <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+            metric.label
+          }</div>
+        </div>
+      `);
+    });
+    const today = formatNumber(kpis.today_deposit, currency);
+    const ldCumulative = formatNumber(kpis.ld_cumulative, currency);
+    const lastd = formatNumber(kpis.ld_deposit, currency);
+
+    $("#wd-time").text(time);
+
+    $("#td_withdraw_deposit .value").text(today.value);
+    $("#td_withdraw_deposit .symbol").text(today.symbol);
+
+    $("#ld_withdraw_cumulative .value").text(ldCumulative.value);
+    $("#ld_withdraw_cumulative .symbol").text(ldCumulative.symbol);
+
+    $("#lastd_withdraw_deposit").text(lastd.value);
+    //$("#target-withdraw-amount").text(formatNumber(target));
+    //const percentage = ((kpis.ld_deposit / target) * 100).toFixed(1);
+    //$("#progress-fill-withdraw").animate({ width: `${percentage}%` }, 600);
+  }
+
+  function buildCharts(
+    chartHours,
+    todayData,
+    cumulativeData,
+    lastDayData,
+    lastCumulativeData
+  ) {
+    if (hourlyChart) hourlyChart.destroy();
+    if (previousDayChart) previousDayChart.destroy();
+    hourlyChart = new Chart($("#hourlyChart")[0], {
+      type: "line",
+      data: {
+        labels: chartHours,
+        datasets: [
+          {
+            label: "Current",
+            data: todayData,
+            borderColor: "#10B981",
+            tension: 0.4,
+            fill: false,
+          },
+          {
+            label: "Cumulative",
+            data: cumulativeData,
+            borderColor: "#3B82F6",
+            tension: 0.4,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+    previousDayChart = new Chart($("#previousDayChart")[0], {
+      type: "bar",
+      data: {
+        labels: chartHours,
+        datasets: [
+          { label: "Last Day", data: lastDayData, backgroundColor: "#F59E0B" },
+          {
+            label: "Last Cumulative",
+            data: lastCumulativeData,
+            backgroundColor: "#A78BFA",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  }
+
+  function updateHistory(history, $logList, sub) {
+    if (sub === "deposit" || sub === "withdraw") {
+      history.forEach((entry) => {
+        const logHtml = `
+            <li class="bg-white border rounded-lg p-2 shadow-sm hover:shadow transition animate__animated animate__fadeIn">
+              <div class="flex justify-between font-medium mb-1">
+                <span class="text-green-700">HR-${entry.time}</span>
+                <span class="text-gray-800">${formatNumber(entry.amount)}</span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                ${["hdod", "hwow", "cdod", "cwow"]
+                  .map((label) => {
+                    const value = entry[label] ?? 0;
+                    const { svg, cssClass } = getBadgeClassAndArrow(value);
+                    return `
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cssClass}">
+                      ${svg}
+                      ${label.toUpperCase()}: ${value}%
+                    </span>`;
+                  })
+                  .join("")}
+
+              </div>
+            </li>`;
+        $logList.append(logHtml);
+      });
+    } else if (sub === "pendingdeposit" || sub === "pendingwithdraw") {
+      history.forEach((entry) => {
+        const logHtml = `
+            <li class="bg-white border rounded-lg p-2 shadow-sm hover:shadow transition animate__animated animate__fadeIn">
+              <div class="flex justify-between font-medium mb-1">
+                <span class="text-green-700">HR-${entry.time}</span>
+                <span class="text-gray-800">${formatNumber(entry.amount)}</span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                ${["amount", "count", "avg_time"]
+                  .map((label) => {
+                    const value = entry[label] ?? 0;
+                    const { svg, cssClass } = getBadgeClassAndArrow(value);
+                    return `
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100">
+                      ${label.toUpperCase()}: ${formatNumber(value)}
+                    </span>`;
+                  })
+                  .join("")}
+
+              </div>
+            </li>`;
+        $logList.append(logHtml);
+      });
+    }
+  }
+
+  //history process
+  function updateDepositHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
+
+    // ✅ If no history, show default card
+    if (!histories || histories.length === 0) {
+      dp_card_holder = `
+        <div id="wd-sub" class="flex flex-col gap-3 h-full col-span-1 lg:col-span-2">
+          <div class="h-full">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 text-center text-gray-500">
+              <i data-lucide="folder-off" class="w-6 h-6 mx-auto text-gray-300"></i>
+              <p class="mt-2">No deposit history available.</p>
+            </div>
+          </div>
+        </div>
+      `;
+      targetElement.html(dp_card_holder);
+      return;
+    }
+
+    histories.forEach((history) => {
+      console.log("This is the Deposit");
+      //console.log(history)
+
+      let metrics = [
+        { label: "HDoD", value: history.kpis.hdod },
+        { label: "HWoW", value: history.kpis.hwow },
+        { label: "CDoD", value: history.kpis.cdod },
+        { label: "CWoW", value: history.kpis.cwow },
+      ];
+      let width = ((history.kpis.today_deposit / target) * 100).toFixed(2);
+
+      metrics.forEach((metric) => {
+        const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+        dp_card += `
+            <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+              <div class="flex items-center gap-2">
+                <div class="w-4 h-4">${svg}</div>
+                <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
+              </div>
+              <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+                metric.label
+              }</div>
+            </div>
+          `;
+      });
+      let history_deposit = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_cum = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_last = formatNumber(
+        history.kpis.ld_deposit,
+        history.currency
+      );
+      let history_target = formatNumber(target, history.currency);
+      dp_card_holder += `
+          <div id="dp-sub" class="flex flex-col gap-3 h-full">
+            <div class="h-full">
+              <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6">
+                  <!-- Header -->
+                <div class="flex flex-col sm:justify-between sm:items-start gap-2">
+
+                  <!-- Filters (Brand, Currency) -->
+                  <div class="flex justify-between items-center gap-2 w-full">
+                    <h2 class="text-lg font-bold text-green-700 uppercase">Deposit</h2>
+                  </div>
+
+                  <!-- Stats -->
+                  <div class="" id="stats-deposit-container">
+                    <div class="text-xs text-gray-600 flex items-center gap-4 mt-1">
+                      <span>Hourly Dp. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_deposit.symbol}</span>
+                          <span class="value">${history_deposit.value}</span>
+                        </strong>
+                      </span>
+                      <span>Cum. Dp. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_cum.symbol}</span>
+                          <span class="value">${history_cum.value}</span>
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  
+
+                </div>
+
+                  <!-- Deposit Cards -->
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    ${dp_card}
+                  </div>
+
+                  <!-- Target Progress -->
+                  <div class="space-y-1 text-xs">
+                    <div class="flex justify-between">
+                      <span>Last Day Dp. <strong class="text-gray-800">${history_last.value}</strong></span>
+                    </div>
+
+                    <div class="flex justify-between text-gray-600">
+                      <span>Target:</span>
+                      <span class="font-semibold text-gray-800">${history_target.value}</span>
+                    </div>
+
+                    <div class="border rounded-full bg-gray-100">
+                        <div class="w-full h-2 rounded-full" style="width:${width}%">
+                            <div class="h-2 bg-green-500 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-right text-[10px] text-gray-400">${history.time}</div>
+                  </div>
+                </div>
+            </div>
+          </div>
+        `;
+
+      dp_card = "";
+    });
+    targetElement.html(dp_card_holder);
+  }
+
+  function updateWithdrawHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    console.log("ginagawa...");
+    let dp_card_holder = "";
+
+    // ✅ If no history, show default card
+    if (!histories || histories.length === 0) {
+      dp_card_holder = `
+        <div id="wd-sub" class="flex flex-col gap-3 h-full col-span-1 lg:col-span-2">
+          <div class="h-full">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 text-center text-gray-500">
+              <i data-lucide="folder-off" class="w-6 h-6 mx-auto text-gray-300"></i>
+              <p class="mt-2">No withdraw history available.</p>
+            </div>
+          </div>
+        </div>
+      `;
+      targetElement.html(dp_card_holder);
+      return;
+    }
+
+    // ✅ If records exist
+    histories.forEach((history) => {
+      console.log("This is the withdraw");
+      console.log(history);
+
+      let dp_card = "";
+      let metrics = [
+        { label: "HDoD", value: history.kpis.hdod },
+        { label: "HWoW", value: history.kpis.hwow },
+        { label: "CDoD", value: history.kpis.cdod },
+        { label: "CWoW", value: history.kpis.cwow },
+      ];
+      let width = ((history.kpis.today_deposit / target) * 100).toFixed(2);
+
+      metrics.forEach((metric) => {
+        const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+        dp_card += `
+          <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4">${svg}</div>
+              <span class="text-sm font-semibold">${metric.value ?? 0}%</span>
+            </div>
+            <div class="text-[11px] font-medium uppercase mt-1 tracking-wide">${
+              metric.label
+            }</div>
+          </div>
+        `;
+      });
+
+      let history_deposit = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_cum = formatNumber(
+        history.kpis.today_deposit,
+        history.currency
+      );
+      let history_last = formatNumber(
+        history.kpis.ld_deposit,
+        history.currency
+      );
+      let history_target = formatNumber(target, history.currency);
+
+      dp_card_holder += `
+        <div id="wd-sub" class="flex flex-col gap-3 h-full">
+          <div class="h-full">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6">
+              <!-- Header -->
+              <div class="flex flex-col sm:justify-between sm:items-start gap-2">
+                <div class="flex justify-between items-center gap-2 w-full">
+                  <h2 class="text-lg font-bold text-green-700 uppercase">Withdraw</h2>
+                </div>
+
+                <!-- Stats -->
+                  <div class="" id="stats-deposit-container">
+                    <div class="text-xs text-gray-600 flex items-center gap-4 mt-1">
+                      <span>Hourly Wd. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_deposit.symbol}</span>
+                          <span class="value">${history_deposit.value}</span>
+                        </strong>
+                      </span>
+                      <span>Cum. Wd. 
+                        <strong class="text-gray-900">
+                          <span class="symbol text-base font-extrabold">${history_cum.symbol}</span>
+                          <span class="value">${history_cum.value}</span>
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+              </div>
+
+              <!-- Metric Cards -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                ${dp_card}
+              </div>
+
+              <!-- Target Progress -->
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between">
+                  <span>Last Day Wd. <strong class="text-gray-800">${history_last.value}</strong></span>
+                </div>
+
+                <div class="flex justify-between text-gray-600">
+                  <span>Target:</span>
+                  <span class="font-semibold text-gray-800">${history_target.value}</span>
+                </div>
+
+                <div class="border rounded-full bg-gray-100">
+                  <div class="w-full h-2 rounded-full" style="width:${width}%">
+                    <div class="h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                </div>
+
+                <div class="text-right text-[10px] text-gray-400">${history.time}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    targetElement.html(dp_card_holder);
+  }
+
+  function updatePendingWithdrawHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
+    // ✅ If no history, show default card
+    if (!histories || histories.length === 0) {
+      dp_card_holder = `
+        <div class="flex flex-col gap-3 h-full col-span-1 lg:col-span-2">
+          <div class="h-full">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 text-center text-gray-500">
+              <i data-lucide="folder-off" class="w-6 h-6 mx-auto text-gray-300"></i>
+              <p class="mt-2">No pending withdraw history available.</p>
+            </div>
+          </div>
+        </div>
+      `;
+      targetElement.html(dp_card_holder);
+      return;
+    }
+
+    histories.forEach((history) => {
+      console.log("This is the withdraw");
+      console.log(history);
+
+      const metrics = [
+        {
+          label: "Pending Wd. Amount",
+          value: history.kpis.total_pending_withdraw_amount,
+        },
+        {
+          label: "Pending Wd. Count",
+          value: history.kpis.total_pending_withdraw_count,
+        },
+        { label: "Average Time", value: history.kpis.average_pending_time },
+      ];
+
+      metrics.forEach((metric) => {
+        const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+        let history_val = formatNumber(metric.value, currency);
+        dp_card += `
+          <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">${
+                history_val.value ?? 0
+              }</span>
+            </div>
+            <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
+              metric.label
+            }</div>
+          </div>
+        `;
+      });
+
+      dp_card_holder += `
+        <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 h-full">
+          <div class="flex flex-col sm:justify-between sm:items-start gap-2">
+
+            <!-- Filters (Brand, Currency) -->
+            <div class="flex justify-between items-center gap-2 w-full">
+              <h2 class="text-lg font-bold text-green-700 uppercase">Pending Withdraw</h2>
+            </div>
+
+
+          </div>
+
+            <!-- PD Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">${dp_card}</div>
+
+            <div id="pw-time" class="text-right text-[10px] text-gray-400">${history.time}</div>
+
+          </div>
+      `;
+    });
+    targetElement.html(dp_card_holder);
+  }
+
+  function updatePendingDepositHistory(
+    target,
+    histories,
+    targetElement,
+    brand,
+    currency
+  ) {
+    let dp_card_holder = "";
+    let dp_card = "";
+    // ✅ If no history, show default card
+    if (!histories || histories.length === 0) {
+      dp_card_holder = `
+        <div class="flex flex-col gap-3 h-full col-span-1 lg:col-span-2">
+          <div class="h-full">
+            <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 text-center text-gray-500">
+              <i data-lucide="folder-off" class="w-6 h-6 mx-auto text-gray-300"></i>
+              <p class="mt-2">No pending deposit history available.</p>
+            </div>
+          </div>
+        </div>
+      `;
+      targetElement.html(dp_card_holder);
+      return;
+    }
+
+    histories.forEach((history) => {
+      console.log("This is the pending deposit");
+      console.log(history);
+
+      const metrics = [
+        {
+          label: "Pending Dp. Amount",
+          value: history.kpis.total_pending_deposit_amount,
+        },
+        {
+          label: "Pending Dp. Count",
+          value: history.kpis.total_pending_deposit_count,
+        },
+        { label: "Average Time", value: history.kpis.average_pending_time },
+      ];
+
+      metrics.forEach((metric) => {
+        const { svg, cssClass } = getBadgeClassAndArrow(metric.value ?? 0);
+        let history_val = formatNumber(metric.value, currency);
+        dp_card += `
+          <div class="p-3 rounded-lg shadow-sm ${cssClass} flex flex-col items-center justify-center animate__animated animate__fadeIn">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">${
+                history_val.value ?? 0
+              }</span>
+            </div>
+            <div class="text-[11px] font-medium uppercase mt-1 tracking-wide text-center">${
+              metric.label
+            }</div>
+          </div>
+        `;
+      });
+
+      dp_card_holder += `
+        <div class="bg-white rounded-xl shadow-md p-6 w-full text-sm space-y-6 h-full">
+          <div class="flex flex-col sm:justify-between sm:items-start gap-2">
+
+            <!-- Filters (Brand, Currency) -->
+            <div class="flex justify-between items-center gap-2 w-full">
+              <h2 class="text-lg font-bold text-green-700 uppercase">Pending Deposit</h2>
+            </div>
+
+
+          </div>
+
+            <!-- PD Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">${dp_card}</div>
+
+            <div class="text-right text-[10px] text-gray-400">${history.time}</div>
+
+          </div>
+      `;
+    });
+    targetElement.html(dp_card_holder);
+  }
+
+  function updateDashboard(sub, tab) {
+    console.log(sub, tab);
+    // 🔄 Show skeleton, hide real dashboard content
+    $("#dashboard-content").hide();
+    $("#skeleton-loader").show();
+
+    const brand = $("#brand-select").val();
+    const currency = $("#currency-select").val();
+    $.getJSON(
+      `/api/dashboard-data?brand=${brand}&currency=${currency}&table=${sub}&tab=${tab}`,
+      function (data) {
+        console.log(data);
+        const kpis = data.deposit.kpis || {},
+          target = data.deposit.target || 1,
+          history = data.history_log || [];
+        const width = ((kpis.today_deposit / target) * 100).toFixed(2);
+
+        $("#dp-title").text(`${data.deposit.tab.toUpperCase()}`);
+        $("#withdraw-title").text(`${data.withdraw.tab.toUpperCase()}`);
+
+        //for deposit card
+        let $depositContainer = $("#deposit-container").empty();
+        updateDeposit(
+          data.deposit.kpis,
+          data.deposit.target,
+          $depositContainer,
+          data.deposit.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
+
+        //for withdraw card
+        let $withdrawContainer = $("#withdraw-container").empty();
+        updateWithdraw(
+          data.withdraw.kpis,
+          data.withdraw.target,
+          $withdrawContainer,
+          data.withdraw.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
+
+        let $pendingDepositContainer = $("#pending-deposit-card").empty();
+        updatePendingDeposit(
+          data.pendingdeposit.kpis || {},
+          data.pendingdeposit.target,
+          $pendingDepositContainer,
+          data.pendingdeposit.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
+
+        let $pendingWithdrawContainer = $("#pending-withdraw-card").empty();
+        updatePendingWithdraw(
+          data.pendingwithdraw.kpis,
+          data.pendingwithdraw.target,
+          $pendingWithdrawContainer,
+          data.withdraw.time,
+          data.deposit.brand,
+          data.deposit.currency
+        );
+
+        //const $logList = $("ul.space-y-2").empty();
+        //updateHistory(history, $logList, sub);
+
+        // History elements handler
+        let $depositHistoryContainer = $("#dp-history-parent").empty();
+        updateDepositHistory(
+          data.deposit.target,
+          data.deposit.history_log,
+          $depositHistoryContainer
+        );
+
+        let $wpHistoryContainer = $("#wp-history-parent").empty();
+        updateWithdrawHistory(
+          data.withdraw.target,
+          data.withdraw.history_log,
+          $wpHistoryContainer
+        );
+
+        let $pwpHistoryContainer = $("#pwp-history-parent").empty();
+        updatePendingWithdrawHistory(
+          data.pendingwithdraw.target,
+          data.pendingwithdraw.history_log,
+          $pwpHistoryContainer
+        );
+
+        let $pdpHistoryContainer = $("#pdp-history-parent").empty();
+        updatePendingDepositHistory(
+          data.pendingdeposit.target,
+          data.pendingdeposit.history_log,
+          $pdpHistoryContainer
+        );
+
+        // ✅ Fade out loader and show actual dashboard
+        $("#skeleton-loader").fadeOut(200, function () {
+          $("#dashboard-content").fadeIn(300);
+        });
+      }
+    ).fail(function () {
+      $("#skeleton-loader").html(`
+      <div class="text-center text-red-600 font-bold p-4">
+        🔴 Failed to load dashboard data. Please refresh or try again.
+      </div>
+    `);
+    });
+  }
+
+  $(document).ready(function () {
+    const params = new URLSearchParams(window.location.search);
+    const sub = params.get("sub");
+    let tab = "Deposit";
+    const combinationTabs = [
+      "Deposit",
+      "Withdraw",
+      "Pending Deposit",
+      "Pending Withdraw",
+    ];
+
+    if (sub === "deposit") tab = combinationTabs[0];
+    if (sub === "withdraw") tab = combinationTabs[1];
+    if (sub === "pendingdeposit") tab = combinationTabs[2];
+    if (sub === "pendingwithdraw") tab = combinationTabs[3];
+
+    // 👇 Wrap inside a function to delay execution until the event is triggered
+    $("#brand-select, #currency-select").on("change", function () {
+      updateDashboard(sub, tab);
+    });
+
+     /*  ----------------------
+      REFRESH BUTTON HANDLER
+      ----------------------  */
+  $(document).on('click', '.refresh-btn', function (e) {
+    e.preventDefault();            // in case it’s a <button type="submit"> or <a>
+    e.stopPropagation();           // stop bubbling *after* your handler runs
+    console.log('🔄 refresh button clicked');
+    // ... Put your refresh logic here ...
+  });
+
+    // back
+    $(document).on("click", "#back_btn", function () {
+      //hide the container
+      $("#dashboard-content").removeClass("hidden");
+      $("#dashboard-content-history").addClass("hidden");
+    });
+
+    //History Event
+    $(document).on("click", ".history-btn", function (e) {
+       /* If the original click started on the refresh button (or inside it), bail out. */
+    if ($(e.target).closest('.refresh-btn').length) {
+      return;                      // nothing below runs
+    }
+
+    console.log('📜 card clicked (not the button)');
+      //if (e.target === this) {
+        //hide the container
+        $("#dashboard-content").addClass("hidden");
+        $("#dashboard-content-history").removeClass("hidden");
+
+        const dataId = $(this).data("id");
+        switch (dataId) {
+          case 1:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").removeClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          case 2:
+            $("#wp-history-parent").removeClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          case 3:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").addClass("hidden");
+            $("#pdp-history-parent").removeClass("hidden");
+            break;
+          case 4:
+            $("#wp-history-parent").addClass("hidden");
+            $("#dp-history-parent").addClass("hidden");
+            $("#pwp-history-parent").removeClass("hidden");
+            $("#pdp-history-parent").addClass("hidden");
+            break;
+          default:
+          // code block
+        }
+        console.log("Clicked ID:", dataId);
+      //}
+    });
+
+    // Initial load
+    updateDashboard(sub, tab);
+  });
+</script>
+{% endblock %}

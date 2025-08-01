@@ -1,0 +1,108 @@
+<!-- App Brand -->
+<!-- <div class="text-xl font-extrabold mb-8 flex items-center gap-1 bg-green-100 p-2 rounded-md py-4">
+  <i data-lucide="bell" class="shrink-0 w-10 h-10 text-green-600"></i>
+  <div class="flex flex-col items-start uppercase leading-tight">
+    <span class="bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent drop-shadow-sm">
+      Notification
+    </span>
+    <span class="-mt-1 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent drop-shadow-sm">
+      App
+    </span>
+  </div>
+</div> -->
+
+
+<!-- User Info -->
+<!-- <div class="mb-4 text-xs text-gray-500 rounded-lg border border-gray-200 bg-white/70 p-3 space-y-1 shadow-sm">
+  <div class="flex items-center gap-2">
+    <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+    <span class="font-semibold text-gray-700">Role:</span>
+    <span class="ml-auto text-gray-600">{{ user.role or "N/A" }}</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+    <span class="font-semibold text-gray-700">Email:</span>
+    <span class="ml-auto truncate text-gray-600">{{ user.email }}</span>
+  </div>
+</div> -->
+
+<!-- Navigation Links -->
+<nav class="flex-1 overflow-y-auto space-y-6 pr-2 text-sm">
+
+  <!-- Navigation Links -->
+  <div class="space-y-4">
+    {% for link in nav_links %}
+      {% if link.submenu %}
+        <div class="space-y-1">
+          <!-- Section Label -->
+          <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+            <i data-lucide="{{ link.icon }}" class="w-4 h-4 text-gray-400"></i>
+            <span>{{ link.name }}</span>
+          </div>
+
+          <!-- Submenu Items -->
+          <div class="ml-3 space-y-1">
+            {% for sub in link.submenu %}
+              <a href="/set-dashboard-context?sub={{ sub.table | urlencode }}&name={{ sub.name | urlencode }}"
+                 class="group flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 relative
+                 {% if sub.tab == current_page or (current_page == 'Dashboard' and sub.tab == 'deposit') %}
+                   bg-green-100 text-green-700 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-green-500 before:rounded-r
+                 {% else %}
+                   text-gray-600 hover:text-green-600 hover:bg-gray-50
+                 {% endif %}">
+                <i data-lucide="{{ sub.icon }}" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+                <span>Daily Performance</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <!-- Single Item -->
+        <a href="{{ link.url }}"
+           class="group flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-200 relative
+           {% if link.name == current_page %}
+             bg-green-100 text-green-700 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-green-500 before:rounded-r
+           {% else %}
+             text-gray-600 hover:text-green-600 hover:bg-gray-50
+           {% endif %}">
+          <i data-lucide="{{ link.icon }}" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+          <span>{{ link.name }}</span>
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- <p>{{ user.role }}</p> -->
+  {% if user.role != "crm" %} 
+    <!-- Filter Section -->
+    <div class="px-4 py-3 border rounded-md bg-white shadow-sm space-y-2">
+      <h2 class="text-sm font-semibold text-gray-700">Filters</h2>
+
+      <label for="brand-select" class="text-xs text-gray-500">Brand</label>
+      <select id="brand-select" class="w-full border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm">
+        {% for b in brands %}
+          <option value="{{ b }}" {% if b == brand %}selected{% endif %}>{{ b | upper }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="currency-select" class="text-xs text-gray-500">Currency</label>
+      <select id="currency-select" class="w-full border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm">
+        {% for c in available_currencies %}
+          <option value="{{ c }}" {% if c == currency %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+  
+
+</nav>
+
+<!-- Logout Button -->
+<div class="mt-6 border-t pt-4 px-4">
+  <a href="/logout"
+     class="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-600 transition-colors">
+    <i data-lucide="log-out" class="w-4 h-4"></i>
+    Logout
+  </a>
+</div>
+

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-4 sm:p-6">
+  <h1 class="text-2xl font-bold text-green-700 mb-4">👤 Profile Management</h1>
+
+  <!-- Responsive Tabs -->
+  <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-6">
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-600 text-green-700">Profile</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="usersTab">Manage</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="createTab">Create</button>
+    <button class="tab-link text-sm font-medium px-4 py-2 border-b-2 border-green-200 hover:text-green-600" data-tab="targetTab">Amount</button>
+  </div>
+
+  <!-- Profile Info -->
+  <div id="profileTab" class="tab-pane block">
+    <div class="bg-white rounded-lg shadow p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-gray-800 break-words">
+  👋 Hello, {{ user.email }}
+</h2>
+
+      <p class="text-gray-600">Role: <span class="font-semibold">{{ user.role }}</span></p>
+    </div>
+  </div>
+
+  <!-- Manage Users -->
+  <div id="usersTab" class="tab-pane hidden">
+    <div class="overflow-x-auto bg-white rounded-lg shadow p-4">
+      <h2 class="text-lg font-semibold mb-4 text-gray-800">📋 Users</h2>
+      <div class="min-w-[600px]">
+        <table class="w-full min-w-[600px] text-sm border border-gray-200">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 text-left">
+              <th class="py-2 px-3 border-b">Email</th>
+              <th class="py-2 px-3 border-b">Role</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            {% for u in users %}
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-2 px-3">{{ u.email }}</td>
+              <td class="py-2 px-3">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <select name="role" class="border px-2 py-1 rounded text-sm w-full sm:w-auto">
+                      {% for role in roles %}
+                      <option value="{{ role.label }}" {% if u.role == role.value %}selected{% endif %}>{{ role.label }}</option>
+                      {% endfor %}
+                  </select>
+                  <button data-user_id="{{ u.id }}" type="submit" class="role-update text-green-600 text-xs hover:underline">Update</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User -->
+  <div id="createTab" class="tab-pane hidden">
+    <div class="bg-white p-6 rounded shadow max-w-lg mx-auto w-full">
+      <div id="createUserMessage"></div>
+      <h2 class="text-lg font-semibold mb-4 text-gray-800">➕ Create New User</h2>
+      <form id="createUserForm" method="post" class="space-y-4" onsubmit="submitCreateUser(event)">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" name="email" required class="mt-1 block w-full border px-3 py-2 rounded" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Role</label>
+          <select name="role" required class="mt-1 block w-full border px-3 py-2 rounded">
+            {% for role in roles %}
+              <option value="{{ role.label }}">{{ role.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Create User
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Target Amount -->
+  <div id="targetTab" class="tab-pane hidden">
+    <div class="bg-white p-6 rounded shadow max-w-md mx-auto w-full">
+      <h2 class="text-lg font-semibold mb-4 text-gray-800">💰 Set Global Target Amount</h2>
+      {% if user.role|lower in ['admin', 'super'] %}
+        <form id="targetAmountForm" class="space-y-4" onsubmit="submitTargetAmount(event)">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <input type="number" id="targetAmountInput" name="amount" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:outline-none" />
+          </div>
+          <div id="targetMessage" class="text-sm text-green-600"></div>
+          <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+            Update Target
+          </button>
+        </form>
+      {% else %}
+        <p class="text-sm text-gray-500">Only administrators can modify this value.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Login Loader Overlay -->
+<div id="request-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-md hidden">
+  <div class="text-center">
+    <svg class="animate-spin h-10 w-10 text-green-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    <p class="text-sm text-green-700 font-medium" id="content-loader"></p>
+  </div>
+</div>
+
+<!-- JSON-safe roles data -->
+<script id="rolesData" type="application/json">
+  {{ roles | tojson }}
+</script>
+
+<script>
+  const links = document.querySelectorAll(".tab-link");
+  const panes = document.querySelectorAll(".tab-pane");
+  const loader = document.getElementById('request-loader');
+  const content = document.getElementById('content-loader');
+
+  links.forEach((link, i) => {
+    link.addEventListener("click", () => {
+      links.forEach((l) => l.classList.remove("border-green-600", "text-green-700"));
+      panes.forEach((p) => p.classList.add("hidden"));
+      link.classList.add("border-green-600", "text-green-700");
+      panes[i].classList.remove("hidden");
+    });
+  });
+
+   const roles = JSON.parse(document.getElementById("rolesData").textContent);
+
+//    Create Users
+  async function submitCreateUser(event) {
+    event.preventDefault();
+    const form = document.getElementById('createUserForm');
+    const formData = new FormData(form);
+    const messageBox = document.getElementById('createUserMessage');
+    messageBox.innerHTML = "";
+
+    try {
+      const res = await fetch("/users/create", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        messageBox.innerHTML = `
+          <div class="mb-4 px-4 py-3 rounded border border-green-300 bg-green-50 text-sm text-green-700">
+            ✅ ${result.message}
+          </div>
+        `;
+        form.reset();
+        await refreshUsersTable();
+      } else {
+        messageBox.innerHTML = `
+          <div class="mb-4 px-4 py-3 rounded border border-red-300 bg-red-50 text-sm text-red-700">
+            🚫 ${result.message}
+          </div>
+        `;
+      }
+    } catch (error) {
+      messageBox.innerHTML = `
+        <div class="mb-4 px-4 py-3 rounded border border-red-300 bg-red-50 text-sm text-red-700">
+          ⚠️ Unexpected error. Please try again.
+        </div>
+      `;
+    }
+  }
+
+//   Rrefresh table dynamically
+  async function refreshUsersTable() {
+    const res = await fetch("/users/list");
+    const users = await res.json();
+    const tableBody = document.getElementById("usersTableBody");
+
+    let html = "";
+    users.forEach(user => {
+      console.log(user)
+      html += `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-2 px-3">${user.email}</td>
+          <td class="py-2 px-3">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <select name="role" class="border px-2 py-1 rounded text-sm">
+                ${roles.map(role => `
+                  <option value="${role.label}" ${user.role.toLowerCase() === role.value ? "selected" : ""}>
+                    ${role.label}
+                  </option>`).join("")}
+              </select>
+              <button data-user_id="${user.id}" type="submit" class="role-update text-green-600 text-xs hover:underline">Update</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableBody.innerHTML = html;
+  }
+
+// update target amount
+async function loadTargetAmount() {
+  const res = await fetch("/amount/target");
+  const data = await res.json();
+  document.getElementById("targetAmountInput").value = data.amount;
+}
+
+async function submitTargetAmount(event) {
+  event.preventDefault();
+  const form = document.getElementById("targetAmountForm");
+  const formData = new FormData(form);
+  const message = document.getElementById("targetMessage");
+  message.textContent = "";
+
+  try {
+    const res = await fetch("/amount/target", {
+      method: "POST",
+      body: formData,
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      message.textContent = `✅ ${result.message}`;
+      loadTargetAmount(); // refresh the value in input
+    } else {
+      message.textContent = `❌ ${result.message}`;
+    }
+
+    // Clear message after 3 seconds
+    setTimeout(() => {
+    message.textContent = "";
+    }, 3000);
+
+  } catch (error) {
+    message.textContent = "⚠️ Failed to update target.";
+  }
+}
+
+// Optional: Auto-load when switching tabs
+document.querySelectorAll(".tab-link").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.tab === "targetTab") loadTargetAmount();
+  });
+
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const tableBody = document.getElementById("usersTableBody");
+
+  // ✅ Prevent double or multiple bindings
+  if (tableBody.dataset.listenerAttached === "true") return;
+  tableBody.dataset.listenerAttached = "true";
+
+  console.log("✅ Bound single listener to #usersTableBody");
+
+  tableBody.addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("role-update")) return;
+
+    const button = event.target;
+    const userId = button.dataset.user_id;
+
+    // ⬅️ Get parent container of the button
+    const container = button.closest("td");
+    const select = container.querySelector("select[name='role']");
+    const selectedRole = select.value;
+
+    console.log("User ID:", userId);
+    console.log("Selected Role:", selectedRole);
+
+    try {
+      loader.classList.remove('hidden'); // ⬅️ Show the loader
+
+      const res = await fetch(`/users/${userId}/change-role`, {
+        method: "POST",
+        body: new URLSearchParams({ role: selectedRole }),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      
+      const result = await res.json();
+      if (!result.success) {
+        console.error(`❌ Failed to update role for ${userId}:`, result.message);
+      } else {
+        console.log(`✅ Role updated for ${userId}`);
+        await refreshUsersTable();
+        loader.classList.add('hidden'); // ⬅️ Show the loader
+      }
+    } catch (err) {
+      console.error(`⚠️ Error updating role for ${userId}:`, err);
+    }
+  });
+});
+
+</script>
+{% endblock %}
