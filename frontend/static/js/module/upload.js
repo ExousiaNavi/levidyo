@@ -118,6 +118,7 @@ export function uploadToServer(
         // progressContainer.classList.add("hidden");
         document.querySelector("#captureLoader").classList.add("hidden");
         const loader = document.getElementById("successLoader");
+        const errorloader = document.getElementById("faceErrorLoader");
         loader.classList.remove("hidden");
         // Hide automatically after 1.5s
         setTimeout(() => loader.classList.add("hidden"), 2000);
@@ -125,14 +126,19 @@ export function uploadToServer(
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
           console.log(`Upload success (${currentStep}):`, response);
-
           // ✅ Update step in localStorage
           let nextStep = currentStep;
+
           if (currentStep === "face") {
-            nextStep = "idFront";
-            localStorage.setItem("capturedFace", response.image_url);
-            document.querySelector("#upload-type").textContent =
-              "Upload your Front-ID";
+            if (!response.face_validated) {
+              errorloader.classList.remove("hidden");
+              setTimeout(() => errorloader.classList.add("hidden"), 5000);
+            } else {
+              nextStep = "idFront";
+              localStorage.setItem("capturedFace", response.image_url);
+              document.querySelector("#upload-type").textContent =
+                "Upload your Front-ID";
+            }
           } else if (currentStep === "idFront") {
             nextStep = "idBack";
             localStorage.setItem("capturedFront", response.image_url);

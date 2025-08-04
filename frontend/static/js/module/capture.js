@@ -74,18 +74,40 @@ export async function captureFace(
           if (!response.ok) throw new Error("Upload failed");
 
           const data = await response.json();
-          capturedFace = data.image_url;
-          //get the uploaded filename
-          document.getElementById("uploadedFilename").value = data.filename;
-          await setCapturedFace(data.image_url);
-          // UI updates
-          if (submitBtn) submitBtn.textContent = "✅ Next";
+          console.log(data)
+          if (!data.face_validated){
+            if (submitBtn) {
+              capturedFace = "https://static.vecteezy.com/system/resources/previews/017/178/222/original/round-cross-mark-symbol-with-transparent-background-free-png.png"
+              // Change icon to X
+              submitBtn.innerHTML = '❌ Next'; 
+              
+              // Disable the button
+              submitBtn.disabled = true;
+              
+              // Optional: Add disabled styling
+              submitBtn.style.opacity = '0.6';
+              submitBtn.style.cursor = 'not-allowed';
+            }
+          }else{
+
+            capturedFace = data.image_url;
+            //get the uploaded filename
+            document.getElementById("uploadedFilename").value = data.filename;
+            await setCapturedFace(capturedFace);
+            // UI updates
+            if (submitBtn) submitBtn.textContent = "✅ Next";
+            // Disable the button
+              submitBtn.disabled = true;
+              // Optional: Add enabled styling
+              submitBtn.style.opacity = '1';
+              submitBtn.style.cursor = 'pointer';
+          }
           if (cameraPage) cameraPage.classList.add("hidden");
           if (previewPage) {
             previewPage.classList.add("fade-in");
             previewPage.classList.remove("hidden");
           }
-          if (previewImage) previewImage.src = data.image_url;
+          if (previewImage) previewImage.src = capturedFace;
         } catch (error) {
           console.error("Upload error:", error);
           alert("Failed to upload image. Please try again.");

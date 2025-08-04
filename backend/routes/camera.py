@@ -8,12 +8,17 @@ from backend.core.auth import check_auth, NAV_LINKS, NAV_LINKS_CRM
 from datetime import timedelta, datetime
 # import json
 import cv2
+import json
 import os
 from pathlib import Path
 import shutil
 import random
 import string
 import uuid
+# import pytesseract
+import numpy as np
+from matplotlib import pyplot as plt
+# from pytesseract import Output
 
 # Get the real base directory from your main file logic
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # <- adjust based on file depth
@@ -24,6 +29,7 @@ UPLOAD_ID_DIR = STATIC_DIR / "upload_ids"
 ENCODED_DIR = STATIC_DIR / "encoded"
 ENCODED_ID_DIR = STATIC_DIR / "encoded_id"
 HAAR_CASCADE_PATH = STATIC_DIR / "haarcascades" / "haarcascade_frontalface_default.xml" 
+CARD_TEMPLATE = STATIC_DIR / "templates" / "card.png" 
 
 # Make sure directories exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -34,6 +40,89 @@ router = APIRouter()
 def generate_random_message(length=12):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
+
+def verify_id_card(image_path, template_path="card.png"):
+    """Proper template matching - finds card in image regardless of sizes"""
+    try:
+        # Load images
+        img = cv2.imread(image_path)
+        template = cv2.imread(template_path)
+        
+        if img is None or template is None:
+            return {
+                "valid": False,
+                "message": "Could not read image files",
+                "debug_image": None,
+                "details": {}
+            }
+        
+        # Convert to grayscale
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        t_h, t_w = template_gray.shape
+        i_h, i_w = img_gray.shape
+
+        # ✅ Resize template if larger than image
+        if t_h > i_h or t_w > i_w:
+            scale = min(i_w / t_w, i_h / t_h, 1.0)  # never upscale
+            new_w, new_h = int(t_w * scale), int(t_h * scale)
+            template_gray = cv2.resize(template_gray, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            t_h, t_w = template_gray.shape
+        
+        # Perform template matching
+        res = cv2.matchTemplate(img_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.7
+        loc = np.where(res >= threshold)
+        
+        debug_img = img.copy()
+        
+        if len(loc[0]) > 0:
+            # Get all matches above threshold
+            for pt in zip(*loc[::-1]):
+                cv2.rectangle(debug_img, pt, (pt[0] + t_w, pt[1] + t_h), (0, 255, 0), 2)
+            
+            # Get best match
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            
+            debug_path = image_path.replace(".", "_debug.")
+            cv2.imwrite(debug_path, debug_img)
+            
+            return {
+                "valid": True,
+                "message": f"Card detected (confidence: {max_val:.2f})",
+                "debug_image": debug_path,
+                "details": {
+                    "best_match": {
+                        "x": int(max_loc[0]),
+                        "y": int(max_loc[1]),
+                        "width": t_w,
+                        "height": t_h,
+                        "confidence": float(max_val)
+                    }
+                }
+            }
+        else:
+            cv2.putText(debug_img, "No card detected", (20, 40),
+                      cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            debug_path = image_path.replace(".", "_debug.")
+            cv2.imwrite(debug_path, debug_img)
+            
+            return {
+                "valid": False,
+                "message": "No card detected",
+                "debug_image": debug_path,
+                "details": {}
+            }
+
+    except Exception as e:
+        return {
+            "valid": False,
+            "message": f"Processing error: {str(e)}",
+            "debug_image": None,
+            "details": {}
+        }
+
+  
 @router.get("/camera")
 async def camera_page(request: Request):
         user = check_auth(request)
@@ -81,17 +170,17 @@ async def verify_id(
 
         # Here you would add your ID verification logic
         # For example:
-        verification_result = verify_id_image(str(save_path), side)
+        # verification_result = verify_id_card(str(save_path), CARD_TEMPLATE)
 
-        if not verification_result["valid"]:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "valid": False,
-                    "message": verification_result.get("message", "ID verification failed"),
-                    "details": verification_result.get("details", {})
-                }
-            )
+        # if not verification_result["valid"]:
+        #     return JSONResponse(
+        #         status_code=400,
+        #         content={
+        #             "valid": False,
+        #             "message": verification_result.get("message", "ID verification failed"),
+        #             "details": verification_result.get("details", {})
+        #         }
+        #     )
 
         # Generate secret code to embed
         code = generate_random_message(16)
@@ -104,7 +193,7 @@ async def verify_id(
             "message": "ID verified successfully",
             "image_url": f"/static/encoded_id/{filename}",
             "filename": filename,
-            "details": verification_result.get("details", {})
+            # "details": verification_result.get("details", {})
         })
 
     except Exception as e:
@@ -117,27 +206,6 @@ async def verify_id(
         )
 
 
-# Example verification function (you would implement your actual logic here)
-def verify_id_image(image_path: str, side: str) -> dict:
-    """
-    Placeholder for actual ID verification logic
-    Returns dict with at least {'valid': bool, 'message': str}
-    """
-    # Add your actual verification logic here
-    # This might include:
-    # - OCR to read ID information
-    # - Template matching for ID type
-    # - Security feature detection
-    # - Front/back consistency checks
-    
-    return {
-        "valid": True,  # Replace with actual verification
-        "message": "Verification passed",
-        "details": {
-            "side": side,
-            # Add any extracted information here
-        }
-    }
 
 # face logic
 @router.post("/upload-image")
@@ -172,9 +240,10 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
         output_path = ENCODED_DIR / filename
 
         # Encode with watermark positioned based on face if found
-        encode_image(str(input_path), str(output_path), code, str(STATIC_DIR_LOGO), face_box)
+        face_validated = encode_image(str(input_path), str(output_path), code, str(STATIC_DIR_LOGO), face_box, debug=False)
 
         return JSONResponse({
+            "face_validated": face_validated,
             "message": "Image encoded and saved successfully.",
             "image_url": f"/static/encoded/{filename}",
             "filename" : filename

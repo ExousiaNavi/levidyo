@@ -75,11 +75,7 @@ export async function runDetection(
         } else if (!isFaceBigEnough) {
           message = "📷 Move closer.";
         } else if (!isHorizontallyInside) {
-          message = `↔️ Center face. x=${x} >= ${
-            oblongX + paddingW - oblongWidth * 0.3
-          }, x+w${x + width} <= ${
-            oblongX + oblongWidth - paddingW + oblongWidth * 0.2
-          }`;
+          message = `↔️ Center your face.`;
         } else if (!isTopInside) {
           message = "⬇️ Lower forehead.";
         } else if (!isBottomInside) {
