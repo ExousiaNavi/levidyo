@@ -17,7 +17,7 @@ import string
 import uuid
 # import pytesseract
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 # from pytesseract import Output
 
 # Get the real base directory from your main file logic
