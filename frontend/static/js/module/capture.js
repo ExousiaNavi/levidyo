@@ -97,7 +97,7 @@ export async function captureFace(
             // UI updates
             if (submitBtn) submitBtn.textContent = "✅ Next";
             // Disable the button
-              submitBtn.disabled = true;
+              submitBtn.disabled = false;
               // Optional: Add enabled styling
               submitBtn.style.opacity = '1';
               submitBtn.style.cursor = 'pointer';

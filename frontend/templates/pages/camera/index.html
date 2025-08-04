@@ -34,10 +34,46 @@
   id="mdh"
   class="flex flex-col items-center justify-center gap-6 p-4 w-full min-h-[calc(100vh-100px)] hidden"
 >
+  <!-- Username Verification -->
+  <div
+    id="usernamePage"
+    class="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+  >
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+      <h2 class="text-lg font-medium text-gray-900">Identity Verification</h2>
+      <p class="text-sm text-gray-500 mt-1">Enter your username to proceed</p>
+    </div>
+
+    <!-- Username Input Container -->
+    <div class="p-6">
+      <label for="username" class="block text-sm font-medium text-gray-700 mb-2"
+        >Username</label
+      >
+      <input
+        type="text"
+        id="username"
+        name="username"
+        placeholder="Enter your username"
+        class="block w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+        required
+      />
+      <p id="username-error" class="text-red-500 font-semibold hidden">Invalid username. Please try again!.</p>
+      <!-- Continue Button -->
+      <button
+      type="button"
+        id="continueBtn"
+        class="mt-6 w-full px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+
   <!-- Camera Feed Section -->
   <div
     id="cameraPage"
-    class="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+    class="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hidden"
   >
     <input type="hidden" id="uploadedFilename" />
     <input type="hidden" id="uploadedFilenameIdFront" />
@@ -126,7 +162,7 @@
         class="text-center text-sm text-green-600 mt-3 h-5 mb-2"
       ></p>
 
-      <div class="flex items-center justify-end">
+      <div class="flex items-center justify-end hidden">
         <a
           id="faceUploadBtn"
           href="javascript:void(0)"
@@ -184,7 +220,7 @@
   <!-- Capture Loader -->
   <div
     id="captureLoader"
-    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black/90 bg-opacity-50 backdrop-blur-sm z-50"
   >
     <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
       <div class="flex items-center space-x-3">
@@ -201,10 +237,44 @@
     </div>
   </div>
 
+  <!-- Verification Loader -->
+<div
+  id="verificationLoader"
+  class="hidden fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
+>
+  <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+    
+    <!-- Spinner -->
+    <div id="loaderSpinner" class="flex items-center justify-center space-x-3">
+      <div class="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+      <p id="loaderMessage" class="text-sm font-medium text-gray-900">
+        Submitting your verification...
+      </p>
+    </div>
+
+    <!-- Success -->
+    <div id="loaderSuccess" class="hidden flex-col items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      <p class="text-sm font-medium text-green-700 mt-2">Submitted successfully!</p>
+    </div>
+
+    <!-- Error -->
+    <div id="loaderError" class="hidden flex-col items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      <p class="text-sm font-medium text-red-700 mt-2">Submission failed!</p>
+    </div>
+  </div>
+</div>
+
+
   <!-- Face Not Detected Error Message -->
   <div
     id="faceErrorLoader"
-    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
   >
     <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
       <!-- Error Icon -->
@@ -232,10 +302,40 @@
     </div>
   </div>
 
+  <!-- Success Username Message -->
+  <div
+    id="successLoaderUsername"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
+  >
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+      <!-- Success Checkmark -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-10 h-10 text-green-600 mx-auto"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+
+      <!-- Message -->
+      <p class="text-green-600 font-semibold mt-3 text-lg">Success!</p>
+      <p class="text-xs text-gray-500 mt-1">
+        Your username is validated successfully.
+      </p>
+    </div>
+  </div>
+
   <!-- Success Message -->
   <div
     id="successLoader"
-    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
   >
     <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
       <!-- Success Checkmark -->
@@ -265,7 +365,7 @@
   <!-- Retry Loader -->
   <div
     id="retryLoader"
-    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
   >
     <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
       <div class="flex items-center justify-center space-x-3">

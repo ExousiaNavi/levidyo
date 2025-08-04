@@ -6,6 +6,7 @@ import { showCameraError, hideCameraError } from "./module/error.js";
 import { captureFace, captureID } from "./module/capture.js";
 import { showFinalReview } from "./module/review.js";
 import { delete_uploaded_face, delete_uploaded_id } from "./module/delete.js";
+import { submitVerification, showVerificationLoader,showVerificationSuccess,showVerificationError,hideVerificationLoader } from "./module/submitVerification.js";
 import {
   setStep,
   getStep,
@@ -23,8 +24,11 @@ import {
   getRetryFront,
   setRetryBack,
   getRetryBack,
+  setUsername,
+  getUsername,
 } from "./module/state.js";
 
+import { usernameValidation } from "./module/username.js";
 import {
   file_selection,
   preventDefaults,
@@ -54,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusText = document.getElementById("statusText");
   const cameraLoading = document.getElementById("cameraLoading");
   const cameraError = document.getElementById("cameraError");
-  const faceUploadBtn = document.getElementById("faceUploadBtn");
+  // const faceUploadBtn = document.getElementById("faceUploadBtn");
   const faceUploadWrapper = document.getElementById("face-upload-wrapper");
   // const retryCameraBtn = document.getElementById("retryCamera");
 
@@ -74,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // const retryFaceBtn = document.getElementById("retryFace");
   const retryFrontBtn = document.getElementById("retryFront");
   const retryBackBtn = document.getElementById("retryBack");
-  // const finalSubmitBtn = document.getElementById("finalSubmit");
+  const finalSubmitBtn = document.getElementById("finalSubmit");
 
   // DOM Elements
   const fileFaceInput = document.getElementById("image-upload");
@@ -88,6 +92,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const progressBar = document.getElementById("progress-bar");
   const progressPercent = document.getElementById("progress-percent");
 
+  // username
+  const usernamePage = document.getElementById("usernamePage");
+  const usernameBtn = document.getElementById("continueBtn");
   // ===========================
   // STATE VARIABLES
   // ===========================
@@ -504,126 +511,186 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  if (faceUploadBtn) {
-    faceUploadBtn.addEventListener("click", async () => {
-      let currentStep = await getStep();
-      localStorage.setItem("manual", "1");
-      console.log(currentStep);
-      // alert("yes")
-      if (cameraPage) cameraPage.classList.add("hidden");
+  // username events
+  if (usernameBtn) {
+    usernameBtn.addEventListener("click", async () => {
+      const usernameInput = document.getElementById("username").value;
+      const usernameError = document.getElementById("username-error");
+      const usernameSuccess = document.getElementById("successLoaderUsername");
+      try {
+        const isValid = await usernameValidation(usernameInput, setUsername);
 
-      if (video) video.classList.add("hidden");
+        if (!isValid) {
+          // ❌ Username invalid
+          // alert("Invalid username. Please try again.");
+          usernameError.classList.remove("hidden");
+          setTimeout(() => usernameError.classList.add("hidden"), 3000);
+          return;
+        }
 
-      if (detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = null;
+        // ✅ Username is valid
+        console.log("Username validated successfully");
+        usernameSuccess.classList.remove("hidden");
+        setTimeout(() => usernameSuccess.classList.add("hidden"), 3000);
+        usernamePage.classList.add("hidden");
+        cameraPage.classList.remove("hidden");
+      } catch (error) {
+        // 🚨 Handle network or server errors
+        console.error("Validation error:", error);
+        alert("An error occurred while validating the username.");
       }
-
-      faceUploadWrapper.classList.remove("hidden");
-
-      await file_selection(
-        fileFaceInput,
-        imagePreview,
-        fileName,
-        fileSize,
-        previewContainer,
-        uploadBtn
-      );
-
-      await resetUploader(
-        fileFaceInput,
-        imagePreview,
-        fileName,
-        fileSize,
-        previewContainer,
-        uploadBtn,
-        progressContainer,
-        progressBar,
-        progressPercent
-      );
-
-      // Handle drag and drop
-      const dropArea = document.querySelector(".border-dashed");
-
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-        dropArea.addEventListener(eventName, (e) => preventDefaults(e), false);
-      });
-
-      ["dragenter", "dragover"].forEach((eventName) => {
-        dropArea.addEventListener(
-          eventName,
-          async (e) => {
-            await highlight(dropArea);
-          },
-          false
-        );
-      });
-
-      ["dragleave", "drop"].forEach((eventName) => {
-        dropArea.addEventListener(
-          eventName,
-          async (e) => {
-            await unhighlight(dropArea);
-          },
-          false
-        );
-      });
-
-      dropArea.addEventListener(
-        "drop",
-        async (e) => await handleDrop(e),
-        false
-      );
-
-      await uploadToServer(
-        uploadBtn,
-        fileFaceInput,
-        progressContainer,
-        progressBar,
-        progressPercent,
-        imagePreview,
-        fileName,
-        fileSize,
-        previewContainer,
-        async () =>
-          showFinalReview(
-            faceUploadWrapper,
-            finalReviewPage,
-            reviewFace,
-            reviewFront,
-            reviewBack,
-            await getCapturedFace(),
-            await getCapturedFront(),
-            await getCapturedBack()
-          )
-        // currentStep
-      );
-
-      // await resetUploader(
-      //   fileFaceInput,
-      //   imagePreview,
-      //   fileName,
-      //   fileSize,
-      //   previewContainer,
-      //   uploadBtn,
-      //   progressContainer,
-      //   progressBar,
-      //   progressPercent
-      // );
     });
   }
+  // NOT NEEDED FOR THIS UPDATES
+  // if (faceUploadBtn) {
+  //   faceUploadBtn.addEventListener("click", async () => {
+  //     let currentStep = await getStep();
+  //     localStorage.setItem("manual", "1");
+  //     console.log(currentStep);
+  //     // alert("yes")
+  //     if (cameraPage) cameraPage.classList.add("hidden");
 
-  // if (finalSubmitBtn) {
-  //   finalSubmitBtn.addEventListener("click", () => {
-  //     console.log("Submit all images", {
-  //       capturedFace,
-  //       capturedFront,
-  //       capturedBack,
+  //     if (video) video.classList.add("hidden");
+
+  //     if (detectionInterval) {
+  //       clearInterval(detectionInterval);
+  //       detectionInterval = null;
+  //     }
+
+  //     faceUploadWrapper.classList.remove("hidden");
+
+  //     await file_selection(
+  //       fileFaceInput,
+  //       imagePreview,
+  //       fileName,
+  //       fileSize,
+  //       previewContainer,
+  //       uploadBtn
+  //     );
+
+  //     await resetUploader(
+  //       fileFaceInput,
+  //       imagePreview,
+  //       fileName,
+  //       fileSize,
+  //       previewContainer,
+  //       uploadBtn,
+  //       progressContainer,
+  //       progressBar,
+  //       progressPercent
+  //     );
+
+  //     // Handle drag and drop
+  //     const dropArea = document.querySelector(".border-dashed");
+
+  //     ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+  //       dropArea.addEventListener(eventName, (e) => preventDefaults(e), false);
   //     });
-  //     alert("Submitted successfully!");
+
+  //     ["dragenter", "dragover"].forEach((eventName) => {
+  //       dropArea.addEventListener(
+  //         eventName,
+  //         async (e) => {
+  //           await highlight(dropArea);
+  //         },
+  //         false
+  //       );
+  //     });
+
+  //     ["dragleave", "drop"].forEach((eventName) => {
+  //       dropArea.addEventListener(
+  //         eventName,
+  //         async (e) => {
+  //           await unhighlight(dropArea);
+  //         },
+  //         false
+  //       );
+  //     });
+
+  //     dropArea.addEventListener(
+  //       "drop",
+  //       async (e) => await handleDrop(e),
+  //       false
+  //     );
+
+  //     await uploadToServer(
+  //       uploadBtn,
+  //       fileFaceInput,
+  //       progressContainer,
+  //       progressBar,
+  //       progressPercent,
+  //       imagePreview,
+  //       fileName,
+  //       fileSize,
+  //       previewContainer,
+  //       async () =>
+  //         showFinalReview(
+  //           faceUploadWrapper,
+  //           finalReviewPage,
+  //           reviewFace,
+  //           reviewFront,
+  //           reviewBack,
+  //           await getCapturedFace(),
+  //           await getCapturedFront(),
+  //           await getCapturedBack()
+  //         )
+  //       // currentStep
+  //     );
+
+  //     // await resetUploader(
+  //     //   fileFaceInput,
+  //     //   imagePreview,
+  //     //   fileName,
+  //     //   fileSize,
+  //     //   previewContainer,
+  //     //   uploadBtn,
+  //     //   progressContainer,
+  //     //   progressBar,
+  //     //   progressPercent
+  //     // );
   //   });
   // }
 
+  if (finalSubmitBtn) {
+    finalSubmitBtn.addEventListener("click", async () => {
+      await showVerificationLoader();
+      const payload = {
+        face: await getCapturedFace(),
+        front: await getCapturedFront(),
+        back: await getCapturedBack(),
+        username: await getUsername(),
+      };
+
+      console.log("Submit all images", payload);
+
+      const result = await submitVerification(payload);
+
+      if (result.success) {
+        await showVerificationSuccess()
+        await resetState();
+        // alert("✅ Submitted successfully!");
+      } else {
+        await showVerificationError()
+        // alert("❌ Submission failed: " + result.message);
+      }
+
+      await hideVerificationLoader()
+      window.location.reload();
+    });
+  }
+
+  //reset state
+  async function resetState() {
+    await setUsername("");
+    await setStep("face");
+    await setRetryFace(false);
+    await setRetryFront(false);
+    await setRetryBack(false);
+    await setCapturedFace("");
+    await setCapturedFront("");
+    await setCapturedBack("");
+    localStorage.setItem("manual", 0);
+  }
   // Handle page visibility changes
   document.addEventListener("visibilitychange", async () => {
     if (document.hidden) {
@@ -712,14 +779,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===========================
   try {
     await loadModels(modelsLoaded);
-    await setStep("face");
-    await setRetryFace(false);
-    await setRetryFront(false);
-    await setRetryBack(false);
-    await setCapturedFace("");
-    await setCapturedFront("");
-    await setCapturedBack("");
-    localStorage.setItem("manual", 0);
+    await resetState();
     // await loadCardModels(); // ✅ ensures coco-ssd loads only when needed
     await setupCameraAndRunDetection(
       shouldFaceUser,

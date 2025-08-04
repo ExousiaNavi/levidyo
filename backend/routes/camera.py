@@ -29,7 +29,7 @@ UPLOAD_ID_DIR = STATIC_DIR / "upload_ids"
 ENCODED_DIR = STATIC_DIR / "encoded"
 ENCODED_ID_DIR = STATIC_DIR / "encoded_id"
 HAAR_CASCADE_PATH = STATIC_DIR / "haarcascades" / "haarcascade_frontalface_default.xml" 
-CARD_TEMPLATE = STATIC_DIR / "templates" / "card.png" 
+CARD_TEMPLATE = STATIC_DIR / "templates" / "card1.png" 
 
 # Make sure directories exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -41,88 +41,79 @@ def generate_random_message(length=12):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
-def verify_id_card(image_path, template_path="card.png"):
-    """Proper template matching - finds card in image regardless of sizes"""
+def detect_card_with_box(image_path, template_path="card_template.png"):
+    """Detects cards using template matching with error handling"""
     try:
-        # Load images
-        img = cv2.imread(image_path)
-        template = cv2.imread(template_path)
+        # Load images in grayscale
+        original_img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        template = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
         
-        if img is None or template is None:
-            return {
-                "valid": False,
-                "message": "Could not read image files",
-                "debug_image": None,
-                "details": {}
-            }
-        
-        # Convert to grayscale
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        t_h, t_w = template_gray.shape
-        i_h, i_w = img_gray.shape
+        if original_img is None or template is None:
+            return {"valid": False, "message": "Could not read image(s)"}
 
-        # ✅ Resize template if larger than image
-        if t_h > i_h or t_w > i_w:
-            scale = min(i_w / t_w, i_h / t_h, 1.0)  # never upscale
-            new_w, new_h = int(t_w * scale), int(t_h * scale)
-            template_gray = cv2.resize(template_gray, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            t_h, t_w = template_gray.shape
+        # Create a color version for drawing
+        detected_img = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR)
+        h, w = template.shape
+
+        # Try multiple matching methods
+        methods = [cv2.TM_CCOEFF_NORMED, cv2.TM_CCORR_NORMED]  # Best methods first
         
-        # Perform template matching
-        res = cv2.matchTemplate(img_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.7
-        loc = np.where(res >= threshold)
-        
-        debug_img = img.copy()
-        
-        if len(loc[0]) > 0:
-            # Get all matches above threshold
-            for pt in zip(*loc[::-1]):
-                cv2.rectangle(debug_img, pt, (pt[0] + t_w, pt[1] + t_h), (0, 255, 0), 2)
+        best_match = None
+        for method in methods:
+            try:
+                res = cv2.matchTemplate(original_img, template, method)
+                _, max_val, _, max_loc = cv2.minMaxLoc(res)
+                
+                # Keep the best match across methods
+                if best_match is None or max_val > best_match[1]:
+                    best_match = (max_loc, max_val, method)
+            except Exception as e:
+                continue  # Skip if method fails
+
+        # Process results
+        if best_match and best_match[1] > 0.7:  # Confidence threshold
+            max_loc, max_val, method = best_match
+            top_left = max_loc
+            bottom_right = (top_left[0] + w, top_left[1] + h)
             
-            # Get best match
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            # Draw green bounding box
+            cv2.rectangle(detected_img, top_left, bottom_right, (0, 255, 0), 3)
+            cv2.putText(detected_img, f"Card {max_val:.2f}", (top_left[0], top_left[1]-10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
-            debug_path = image_path.replace(".", "_debug.")
-            cv2.imwrite(debug_path, debug_img)
+            output_path = image_path.replace(".", "_detected.")
+            cv2.imwrite(output_path, detected_img)
             
             return {
                 "valid": True,
-                "message": f"Card detected (confidence: {max_val:.2f})",
-                "debug_image": debug_path,
+                "message": "Card detected",
+                "output_image": output_path,
                 "details": {
-                    "best_match": {
-                        "x": int(max_loc[0]),
-                        "y": int(max_loc[1]),
-                        "width": t_w,
-                        "height": t_h,
-                        "confidence": float(max_val)
+                    "method": method,
+                    "confidence": float(max_val),
+                    "location": {
+                        "x": int(top_left[0]),
+                        "y": int(top_left[1]),
+                        "width": w,
+                        "height": h
                     }
                 }
             }
         else:
-            cv2.putText(debug_img, "No card detected", (20, 40),
-                      cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            debug_path = image_path.replace(".", "_debug.")
-            cv2.imwrite(debug_path, debug_img)
+            cv2.putText(detected_img, "No Card Detected", (20, 40),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            output_path = image_path.replace(".", "_detected.")
+            cv2.imwrite(output_path, detected_img)
             
             return {
                 "valid": False,
                 "message": "No card detected",
-                "debug_image": debug_path,
-                "details": {}
+                "output_image": output_path
             }
 
     except Exception as e:
-        return {
-            "valid": False,
-            "message": f"Processing error: {str(e)}",
-            "debug_image": None,
-            "details": {}
-        }
-
-  
+        return {"valid": False, "message": f"Error: {str(e)}"}
+    
 @router.get("/camera")
 async def camera_page(request: Request):
         user = check_auth(request)
@@ -170,8 +161,8 @@ async def verify_id(
 
         # Here you would add your ID verification logic
         # For example:
-        # verification_result = verify_id_card(str(save_path), CARD_TEMPLATE)
-
+        verification_result = detect_card_with_box(str(save_path), CARD_TEMPLATE)
+        print(verification_result)
         # if not verification_result["valid"]:
         #     return JSONResponse(
         #         status_code=400,

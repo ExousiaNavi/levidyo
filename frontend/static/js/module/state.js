@@ -62,3 +62,11 @@ export async function setRetryBack(value) {
 export async function getRetryBack() {
   return localStorage.getItem("retryBack") || false;
 }
+
+export async function setUsername(value) {
+  localStorage.setItem("username", value);
+}
+
+export async function getUsername() {
+  return localStorage.getItem("username") || '';
+}
