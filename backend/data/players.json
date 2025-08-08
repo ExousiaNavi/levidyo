@@ -11,7 +11,7 @@
         "username": "guest_2",
         "user_id": "admin",
         "password": "1234",
-        "kyc_status": "not-verified",
+        "kyc_status": "verified",
         "documents": [],
         "face_verification": false
     }
