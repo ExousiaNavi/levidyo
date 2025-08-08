@@ -73,7 +73,7 @@
   </div>
 
   <!-- <p>{{ user.role }}</p> -->
-  {% if user.role != "crm" %} 
+  {% if user.role != "crm" and not user.roles%} 
     <!-- Filter Section -->
     <div class="px-4 py-3 border rounded-md bg-white shadow-sm space-y-2">
       <h2 class="text-sm font-semibold text-gray-700">Filters</h2>
@@ -93,6 +93,8 @@
       </select>
     </div>
   {% endif %}
+  
+
   
 
 </nav>

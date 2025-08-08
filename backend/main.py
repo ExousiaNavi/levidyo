@@ -1,10 +1,11 @@
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from backend.config import settings
-from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty,camera, username, verification
-
+from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty,username, verification
+from backend.routes.kyc import auth_kyc, kyc, kyc_dashboard, kyc_verification, kyc_verified
 # crm routes
 from backend.routes.crm import crm_dashboard
 import backend.core.firebase  # auto-runs initialization
@@ -42,8 +43,12 @@ app.include_router(amount.router)
 app.include_router(username.router)
 app.include_router(verification.router)
 
-# camera routes
-app.include_router(camera.router)
+# KYC routes
+app.include_router(kyc.router)
+app.include_router(auth_kyc.router)
+app.include_router(kyc_dashboard.router)
+app.include_router(kyc_verification.router)
+app.include_router(kyc_verified.router)
 
 # crm routes
 app.include_router(crm_dashboard.router)

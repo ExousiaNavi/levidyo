@@ -14,16 +14,15 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- TensorFlow.js Core -->
 
+    <!-- Face API -->
+    <script src="/static/js/face-api.js?v=3"></script>
 
-<!-- Face API -->
-<script src="/static/js/face-api.js?v=3"></script>
+    <!-- Use this EXACT combination -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script> -->
 
-<!-- Use this EXACT combination -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script> -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script> -->
+    <!-- App -->
 
-<!-- App -->
-    
     <style>
       * {
         box-sizing: border-box;
@@ -32,10 +31,96 @@
       .glass {
         @apply backdrop-blur-md bg-white/70 shadow-md;
       }
+
+      input[type="date"] {
+        font-size: 16px; /* Prevent iOS zoom */
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: white;
+      }
+
+      .loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        font-family: system-ui, sans-serif;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .loader span {
+        -webkit-text-stroke: 1px #22c55e;
+        background: radial-gradient(
+              1.13em at 50% 1.6em,
+              #22c55e 99%,
+              #0000 101%
+            )
+            calc(50% - 1.6em) 0 / 3.2em 100% text,
+          radial-gradient(1.13em at 50% -0.8em, #0000 99%, #22c55e 101%) 50%
+            0.8em / 3.2em 100% repeat-x text;
+
+        background-clip: text;
+        color: transparent;
+        animation: l9 2s linear infinite;
+      }
+
+      @keyframes l9 {
+        to {
+          background-position: calc(50% + 1.6em) 0, calc(50% + 3.2em) 0.8em;
+        }
+      }
+
+      .loader-img {
+        margin-bottom: 10px;
+        filter: drop-shadow(0 0 2px #14af4d);
+        animation: l9-bounce 2s linear infinite;
+      }
+
+      @keyframes l9-bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      @keyframes zoomOutCenter {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+      }
+
+      .loader.zoom-out {
+        animation: zoomOutCenter 0.5s ease-out forwards;
+        transform-origin: center;
+      }
     </style>
   </head>
 
   <body class="h-screen overflow-hidden flex font-sans text-gray-800">
+    <div
+      id="mainLoader"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black/90 bg-opacity-50 backdrop-blur-sm z-50"
+    >
+      <div class="loader flex flex-col items-center">
+        <img
+          src="/static/logo/lg.png"
+          alt=""
+          srcset=""
+          class="loader-img w-[200px] h-full"
+        />
+        <span id="loader-content">Loading KYC</span>
+      </div>
+    </div>
     <div class="h-screen w-full overflow-hidden flex font-sans text-gray-800">
       {% if user and nav_links | length > 0 %}
       <!-- Desktop Sidebar -->
@@ -104,7 +189,6 @@
       </div>
     </div>
 
-
     <script>
       console.log(window.location.hostname);
       lucide.createIcons();
@@ -137,7 +221,8 @@
       toggle?.addEventListener("click", openSidebar);
       closeBtn?.addEventListener("click", closeSidebar);
       overlay?.addEventListener("click", closeSidebar);
+
+      
     </script>
-    
   </body>
 </html>

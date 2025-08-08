@@ -1,0 +1,406 @@
+{% extends "base.html" %} {% block content %}
+
+<!-- Skeleton Loader -->
+<div
+  id="skeleton-loader"
+  class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse p-4"
+>
+  <div class="space-y-4">
+    <div class="h-6 w-1/3 bg-gray-300 rounded"></div>
+    <div class="grid grid-cols-3 gap-3">
+      <div
+        class="h-24 bg-gray-200 rounded-lg flex items-center justify-center font-bold"
+      >
+        K
+      </div>
+      <div
+        class="h-24 bg-gray-200 rounded-lg flex items-center justify-center font-bold"
+      >
+        Y
+      </div>
+      <div
+        class="h-24 bg-gray-200 rounded-lg flex items-center justify-center font-bold"
+      >
+        C
+      </div>
+    </div>
+    <div
+      class="h-[calc(100vh-250px)] bg-gray-200 rounded-lg flex items-center justify-center font-bold"
+    >
+      DASHBOARD
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Content -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
+  <div class="flex flex-col gap-3 h-full">
+    {% if kyc_status %} {% include "components/kyc/kyc_verified.html" ignore
+    missing %} {% else %} {% set docs = doc_types %} {% include
+    "components/kyc/kyc_not_verified.html" ignore missing %} {% endif %}
+  </div>
+  <div class="p-10 w-full"></div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const loader = document.getElementById("skeleton-loader");
+    const mainLoader = document.getElementById("mainLoader");
+    const loaderContent = document.getElementById("loader-content");
+    const kycVerified = document.getElementById("kyc_verified");
+    const kycNotVerified = document.getElementById("kyc_not_verified");
+    const uuid = {{ user | tojson | safe }};
+    console.log(uuid)
+    // Loader timeout
+    setTimeout(() => {
+      mainLoader.classList.add("hidden");
+      loaderContent.textContent = "Loading KYC";
+      if (kycVerified) kycVerified.classList.remove("hidden");
+      if (kycNotVerified) kycNotVerified.classList.remove("hidden");
+      localStorage.setItem("user_id", uuid.user.user_id);
+    }, 3000);
+
+    lucide.createIcons();
+
+    // DOM Elements
+    const docTypes = {{ doc_types | tojson | safe }};
+    const stepBars = {
+      step1: document.getElementById("step1"),
+      step2: document.getElementById("step2"),
+      step3: document.getElementById("step3"),
+      step4: document.getElementById("step4"),
+    };
+    const steps = {
+      one: document.getElementById("stepOne"),
+      two: document.getElementById("stepTwo"),
+      three: document.getElementById("stepThree"),
+      four: document.getElementById("stepFour"),
+      review: document.getElementById("stepReview"),
+    };
+
+    // Step 1 elements
+    const country = document.getElementById("country");
+    const flagDisplay = document.getElementById('country-flag');
+    const documentType = document.getElementById("documentType");
+    const nextToStep2 = document.getElementById("nextToStep2");
+
+    // Step 2 elements
+    const frontUpload = document.getElementById("frontUpload");
+    const backUpload = document.getElementById("backUpload");
+    const nextToStep3 = document.getElementById("nextToStep3");
+    const backToStep1 = document.getElementById("backToStep1");
+    //const frontPreview = document.getElementById("frontPreview");
+    //const backPreview = document.getElementById("backPreview");
+    const frontContainer = document.getElementById("frontPreviewContainer");
+    const backContainer = document.getElementById("backPreviewContainer");
+
+    // Step 3 elements
+    const selfieUpload = document.getElementById("selfieUpload");
+    const nextToStep4 = document.getElementById("nextToStep4");
+    const backToStep2 = document.getElementById("backToStep2");
+    const selfiePreview = document.getElementById("selfieUploadPreview");
+    const selfiePreviewContainer = document.getElementById("selfiePreviewContainer");
+
+    // Step 4 elements
+    const fullName = document.getElementById("fullName");
+    const birthdate = document.getElementById("birthdate");
+    const address = document.getElementById("address");
+    const city = document.getElementById("city");
+    const postalCode = document.getElementById("postalCode");
+    const backToStep3 = document.getElementById("backToStep3");
+    const nextToReview = document.getElementById("nextToReview");
+
+    // Review elements
+    const backToStep4 = document.getElementById("backToStep4");
+    const submitKycFinal = document.getElementById("submitKycFinal");
+
+    const reviewCountry = document.getElementById("reviewCountry");
+    const reviewDocType = document.getElementById("reviewDocType");
+    const reviewFullName = document.getElementById("reviewFullName");
+    const reviewBirthdate = document.getElementById("reviewBirthdate");
+    const reviewAddress = document.getElementById("reviewAddress");
+    const reviewCity = document.getElementById("reviewCity");
+    const reviewPostalCode = document.getElementById("reviewPostalCode");
+    const reviewFrontImg = document.getElementById("reviewFrontImg");
+    const reviewBackImg = document.getElementById("reviewBackImg");
+    const reviewSelfieImg = document.getElementById("reviewSelfieImg");
+
+    // Helper: Preview image
+    function setupDropZone(dropZoneId, fileInput, previewImgId, iconId, textId, removeBtnId) {
+      const dropZone = document.getElementById(dropZoneId);
+      //const fileInput = document.getElementById(fileInputId);
+      const previewImg = document.getElementById(previewImgId);
+      const icon = document.getElementById(iconId);
+      const text = document.getElementById(textId);
+      const removeBtn = document.getElementById(removeBtnId);
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFiles);
+
+      dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('border-green-500', 'bg-green-100');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-green-500', 'bg-green-100');
+      });
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('border-green-500', 'bg-green-100');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+          fileInput.files = files;
+          handleFiles();
+        }
+      });
+
+      function handleFiles() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewImg.src = e.target.result;
+          previewImg.classList.remove('hidden');
+          icon.classList.add('hidden');
+          text.classList.add('hidden');
+          removeBtn.classList.remove('hidden');
+          localStorage.setItem(fileInput.id, e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Remove button functionality
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation(); // Prevent re-opening file dialog
+        fileInput.value = '';
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+        icon.classList.remove('hidden');
+        text.classList.remove('hidden');
+        removeBtn.classList.add('hidden');
+        validateStep2();
+      });
+
+      //localStorage.setItem(input.id, e.target.result);
+      //validateStep2();
+    }
+    const previewFile = (input, imgElement, container) => {
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imgElement.src = e.target.result;
+          container.classList.remove("hidden");
+          localStorage.setItem(input.id, e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        container.classList.add("hidden");
+      }
+    };
+
+    // ---- STEP 1 ----
+    country.addEventListener("change", () => {
+      console.log(docTypes)
+      const selected = country.value;
+      documentType.innerHTML =
+        '<option value=""> Select Document Type </option>';
+      if (selected && docTypes[selected]) {
+        docTypes[selected].docs.forEach((doc) => {
+          const option = document.createElement("option");
+          option.value = doc;
+          option.textContent = doc;
+          documentType.appendChild(option);
+        });
+        documentType.disabled = false;
+        stepBars.step2.classList.replace("bg-gray-200", "bg-green-500");
+      }
+      nextToStep2.disabled = true;
+      localStorage.setItem("country", selected);
+      flagDisplay.textContent = docTypes[selected] ? docTypes[selected].icon : '';
+    });
+
+    documentType.addEventListener("change", () => {
+      nextToStep2.disabled = !documentType.value;
+      localStorage.setItem("documentType", documentType.value);
+    });
+
+    nextToStep2.addEventListener("click", () => {
+      steps.one.classList.add("hidden");
+      steps.two.classList.remove("hidden");
+    });
+
+    // ---- STEP 2 ----
+    const validateStep2 = () => {
+      nextToStep3.disabled = !(
+        frontUpload.files.length && backUpload.files.length
+      );
+    };
+
+    setupDropZone('frontDropZone', frontUpload, 'frontPreview', 'frontIcon', 'frontText', 'frontRemoveBtn');
+    frontUpload.addEventListener("change", () => {
+      //previewFile(frontUpload, frontPreview, frontContainer);
+      validateStep2();
+    });
+
+    setupDropZone('backDropZone', backUpload, 'backPreview', 'backIcon', 'backText', 'backRemoveBtn');
+    backUpload.addEventListener("change", () => {
+      //previewFile(backUpload, backPreview, backContainer);
+      validateStep2();
+    });
+
+    nextToStep3.addEventListener("click", () => {
+      steps.two.classList.add("hidden");
+      steps.three.classList.remove("hidden");
+      stepBars.step3.classList.replace("bg-gray-200", "bg-green-500");
+    });
+
+    backToStep1.addEventListener("click", () => {
+      steps.two.classList.add("hidden");
+      steps.one.classList.remove("hidden");
+      stepBars.step2.classList.replace("bg-green-500", "bg-gray-200");
+    });
+
+    // ---- STEP 3 ----
+    const cameraPage = document.getElementById("cameraPage")
+
+    //selfieUpload.addEventListener("change", () => {
+    //  const file = selfieUpload.files[0];
+    //  if (file) {
+    //    const reader = new FileReader();
+    //    reader.onload = (e) => {
+    //      selfiePreview.src = e.target.result;
+    //      selfiePreviewContainer.classList.remove("hidden");
+    //      localStorage.setItem("selfieUpload", e.target.result);
+    //    };
+    //    reader.readAsDataURL(file);
+    //  }
+    //  nextToStep4.disabled = selfieUpload.files.length === 0;
+    //});
+
+    nextToStep4.addEventListener("click", () => {
+      steps.three.classList.add("hidden");
+      steps.four.classList.remove("hidden");
+      stepBars.step4.classList.replace("bg-gray-200", "bg-green-500");
+    });
+
+    backToStep2.addEventListener("click", () => {
+      steps.three.classList.add("hidden");
+      steps.two.classList.remove("hidden");
+      stepBars.step3.classList.replace("bg-green-500", "bg-gray-200");
+    });
+
+    // ---- STEP 4 ----
+    const validateStep4 = () => {
+      nextToReview.disabled = !(
+        fullName.value &&
+        birthdate.value &&
+        address.value &&
+        city.value &&
+        postalCode.value
+      );
+    };
+
+    [fullName, birthdate, address, city, postalCode].forEach((input) => {
+      input.addEventListener("input", () => {
+        localStorage.setItem(input.id, input.value);
+        validateStep4();
+      });
+    });
+
+    nextToReview.addEventListener("click", () => {
+      steps.four.classList.add("hidden");
+      steps.review.classList.remove("hidden");
+
+      reviewCountry.textContent = country.options[country.selectedIndex].text;
+      reviewDocType.textContent = documentType.value;
+      reviewFullName.textContent = fullName.value;
+      reviewBirthdate.textContent = birthdate.value;
+      reviewAddress.textContent = address.value;
+      reviewCity.textContent = city.value;
+      reviewPostalCode.textContent = postalCode.value;
+
+      reviewFrontImg.src = frontPreview.src;
+      reviewBackImg.src = backPreview.src;
+      reviewSelfieImg.src = localStorage.getItem("capturedFace");
+    });
+
+    backToStep3.addEventListener("click", () => {
+      steps.four.classList.add("hidden");
+      steps.three.classList.remove("hidden");
+      stepBars.step4.classList.replace("bg-green-500", "bg-gray-200");
+    });
+
+    // ---- REVIEW ----
+    backToStep4.addEventListener("click", () => {
+      steps.review.classList.add("hidden");
+      steps.four.classList.remove("hidden");
+    });
+
+    submitKycFinal.addEventListener("click", async () => {
+      // Gather data
+      const data = {
+        user_id: localStorage.getItem('user_id'),
+        country: localStorage.getItem("country"),
+        documentType: localStorage.getItem("documentType"),
+        fullName: localStorage.getItem("fullName"),
+        birthdate: localStorage.getItem("birthdate"),
+        address: localStorage.getItem("address"),
+        city: localStorage.getItem("city"),
+        postalCode: localStorage.getItem("postalCode"),
+        idFront: localStorage.getItem("frontUpload"), // base64
+        idBack: localStorage.getItem("backUpload"),
+        selfie: localStorage.getItem("capturedFace"),
+      };
+
+      try {
+            const response = await fetch("/kyc/submit-documents", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+            document.getElementById("stepReview").classList.add("hidden");
+            document.getElementById("kycUnderReview").classList.remove("hidden");
+            localStorage.clear();
+            } else {
+            alert("❌ Submission failed. Please try again.");
+            }
+        } catch (err) {
+            console.error("KYC submission error:", err);
+            alert("⚠️ Network error. Please try again.");
+        }
+
+    });
+
+
+    document.getElementById("backToDashboard").addEventListener("click", () => {
+        window.location.href = "/kyc/dashboard"; // Change to your dashboard URL
+    });
+
+
+    // Restore from localStorage if exists
+    if (localStorage.getItem("country"))
+      country.value = localStorage.getItem("country");
+    if (localStorage.getItem("documentType"))
+      documentType.value = localStorage.getItem("documentType");
+    ["fullName", "birthdate", "address", "city", "postalCode"].forEach((id) => {
+      const val = localStorage.getItem(id);
+      if (val) document.getElementById(id).value = val;
+    });
+    if (localStorage.getItem("frontUpload"))
+      frontPreview.src = localStorage.getItem("frontUpload");
+    if (localStorage.getItem("backUpload"))
+      backPreview.src = localStorage.getItem("backUpload");
+    if (localStorage.getItem("selfieUpload"))
+      selfiePreview.src = localStorage.getItem("selfieUpload");
+  });
+</script>
+
+<script type="module" src="/static/js/kyc.js?v=11"></script>
+
+{% endblock %}

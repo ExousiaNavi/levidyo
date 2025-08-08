@@ -119,7 +119,7 @@ async def dashboard(request: Request, brand: str = Query(default=None),
     
     is_admin = user_roles.get("is_admin", False)
     is_crm = user_roles.get("is_crm", False)
-
+    is_player = user_roles.get("roles", False)
     print(sub,tab,user_roles, is_admin)
     if is_admin and not is_crm:
         # 1. All available brands

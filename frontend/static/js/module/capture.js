@@ -5,9 +5,6 @@ export async function captureFace(
   video,
   canvas,
   capturedFace,
-  previewPage,
-  previewImage,
-  submitBtn,
   setCapturedFace
 ) {
   try {
@@ -15,10 +12,8 @@ export async function captureFace(
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.remove("hidden");
 
-    // Ensure frame is ready
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // Capture original frame (mirrored)
     const ctx = canvas.getContext("2d");
     ctx.save();
     ctx.scale(-1, 1);
@@ -27,7 +22,6 @@ export async function captureFace(
 
     clearInterval(detectionInterval);
 
-    // Create high-quality square crop
     const size = Math.min(canvas.width, canvas.height);
     const squareCanvas = document.createElement("canvas");
     squareCanvas.width = size;
@@ -37,20 +31,18 @@ export async function captureFace(
     const offsetX = (canvas.width - size) / 2;
     const offsetY = (canvas.height - size) / 2;
 
-    // Direct pixel copy (no resizing)
     squareCtx.drawImage(
       canvas,
       offsetX,
-      offsetY, // Source X/Y
+      offsetY,
       size,
-      size, // Source width/height
+      size,
       0,
-      0, // Destination X/Y
+      0,
       size,
-      size // Destination width/height (same as source = no resize)
+      size
     );
 
-    // Display preview
     const frozenFrame = document.createElement("img");
     frozenFrame.src = squareCanvas.toDataURL("image/png");
     frozenFrame.id = "frozenFrame";
@@ -58,78 +50,57 @@ export async function captureFace(
     cameraPage.appendChild(frozenFrame);
     video.classList.add("hidden");
 
-    // Upload with maximum quality
-    squareCanvas.toBlob(
-      async (blob) => {
-        try {
-          const formData = new FormData();
-          formData.append("image", blob, "captured.png");
-          formData.append("message", "hidden message here");
+    return await new Promise((resolve) => {
+      squareCanvas.toBlob(
+        async (blob) => {
+          try {
+            const formData = new FormData();
+            formData.append("image", blob, "captured.png");
+            formData.append("message", "hidden message here");
 
-          const response = await fetch("/upload-image", {
-            method: "POST",
-            body: formData,
-          });
+            const response = await fetch("/upload-image", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (!response.ok) throw new Error("Upload failed");
+            if (!response.ok) throw new Error("Upload failed");
 
-          const data = await response.json();
-          console.log(data)
-          if (!data.face_validated){
-            if (submitBtn) {
-              capturedFace = "https://static.vecteezy.com/system/resources/previews/017/178/222/original/round-cross-mark-symbol-with-transparent-background-free-png.png"
-              // Change icon to X
-              submitBtn.innerHTML = '❌ Next'; 
-              
-              // Disable the button
-              submitBtn.disabled = true;
-              
-              // Optional: Add disabled styling
-              submitBtn.style.opacity = '0.6';
-              submitBtn.style.cursor = 'not-allowed';
+            const data = await response.json();
+            if (!data.face_validated) {
+              console.log("Face not detected.");
+              resolve(false);
+            } else {
+              capturedFace = data.image_url;
+              await setCapturedFace(capturedFace);
+              resolve(true);
             }
-          }else{
-
-            capturedFace = data.image_url;
-            //get the uploaded filename
-            document.getElementById("uploadedFilename").value = data.filename;
-            await setCapturedFace(capturedFace);
-            // UI updates
-            if (submitBtn) submitBtn.textContent = "✅ Next";
-            // Disable the button
-              submitBtn.disabled = false;
-              // Optional: Add enabled styling
-              submitBtn.style.opacity = '1';
-              submitBtn.style.cursor = 'pointer';
+          } catch (error) {
+            console.error("Upload error:", error);
+            alert("Failed to upload image. Please try again.");
+            resolve(false);
+          } finally {
+            if (captureLoader) captureLoader.classList.add("hidden");
+            const loader = document.getElementById("successLoader");
+            if (loader) {
+              loader.classList.remove("hidden");
+              setTimeout(() => loader.classList.add("hidden"), 2000);
+            }
           }
-          if (cameraPage) cameraPage.classList.add("hidden");
-          if (previewPage) {
-            previewPage.classList.add("fade-in");
-            previewPage.classList.remove("hidden");
-          }
-          if (previewImage) previewImage.src = capturedFace;
-        } catch (error) {
-          console.error("Upload error:", error);
-          alert("Failed to upload image. Please try again.");
-        } finally {
-          if (captureLoader) captureLoader.classList.add("hidden");
-          const loader = document.getElementById("successLoader");
-          loader.classList.remove("hidden");
-          // Hide automatically after 1.5s
-          setTimeout(() => loader.classList.add("hidden"), 2000);
-        }
-      },
-      "image/png", // Use PNG for lossless compression
-      1.0 // Maximum quality (no compression)
-    );
+        },
+        "image/png",
+        1.0
+      );
+    });
   } catch (error) {
     console.error("Capture error:", error);
     alert("Failed to capture image. Please try again.");
     if (captureBtn) captureBtn.disabled = false;
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.add("hidden");
+    return false;
   }
 }
+
 
 export async function captureID(
   isRetriID,

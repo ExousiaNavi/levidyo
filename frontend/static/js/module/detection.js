@@ -6,9 +6,9 @@ export async function runDetection(
   captureBtn,
   statusText,
   ctxOverlay,
-  loaderHidden,
-  loader,
-  con
+  loaderHidden
+  // loader,
+  // con
 ) {
   const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
   if (detectionInterval) clearInterval(detectionInterval);
@@ -18,7 +18,7 @@ export async function runDetection(
       const oblongHeight = isMobile
         ? overlay.height * 0.75
         : overlay.height * 0.7;
-      const oblongWidth = isMobile ? overlay.width * 0.65 : overlay.width * 0.7;
+      const oblongWidth = isMobile ? overlay.width * 0.7 : overlay.width * 0.7;
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2 - 90;
       //original
@@ -50,9 +50,13 @@ export async function runDetection(
           x >= oblongX + paddingW - oblongWidth * 0.4 &&
           x + width <= oblongX + oblongWidth - paddingW + oblongWidth * 0.4;
 
+        // const isTopInside =
+        //   y >= oblongY - oblongHeight * 0.1 &&
+        //   y <= oblongY + paddingTop + oblongHeight * 0.2;
+        
         const isTopInside =
-          y >= oblongY - oblongHeight * 0.1 &&
-          y <= oblongY + paddingTop + oblongHeight * 0.2;
+          y >= oblongY + oblongHeight * 0.05 && // was -0.1, now +0.05 to move down
+          y <= oblongY + paddingTop + oblongHeight * 0.25; // optional: increased range slightly
 
         const isBottomInside =
           y + height >= oblongY + oblongHeight - paddingBottom - 80 &&
@@ -134,18 +138,18 @@ export async function runDetection(
       ctxOverlay.stroke();
       ctxOverlay.restore();
 
-      if (!loaderHidden && loader) {
-        con.style.opacity = "0";
-        loader.style.opacity = "0";
-        setTimeout(() => {
-          loader.style.display = "none";
-          if (document.querySelector("#mdh")) {
-            document.querySelector("#mdh").classList.remove("hidden");
-          }
-          con.classList.add("hidden");
-        }, 400);
-        loaderHidden = true;
-      }
+      // if (!loaderHidden && loader) {
+      //   con.style.opacity = "0";
+      //   loader.style.opacity = "0";
+      //   setTimeout(() => {
+      //     loader.style.display = "none";
+      //     if (document.querySelector("#mdh")) {
+      //       document.querySelector("#mdh").classList.remove("hidden");
+      //     }
+      //     con.classList.add("hidden");
+      //   }, 400);
+      //   loaderHidden = true;
+      // }
     } catch (error) {
       console.error("Detection error:", error);
     }
