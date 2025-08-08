@@ -1,7 +1,7 @@
 [
     {
         "username": "guest_1",
-        "user_id": "guest",
+        "user_id": "guest_1",
         "password": "1234",
         "kyc_status": "not-verified",
         "documents": [],
@@ -9,7 +9,7 @@
     },
     {
         "username": "guest_2",
-        "user_id": "admin",
+        "user_id": "guest_2",
         "password": "1234",
         "kyc_status": "verified",
         "documents": [],
