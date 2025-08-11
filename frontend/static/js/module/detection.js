@@ -22,8 +22,8 @@ export async function runDetection(
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2 - 90;
       //original
-      // let color = "red";
-      let color = "lime";
+      let color = "red";
+      // let color = "lime";
       let message = "Align your face properly";
 
       const result = await faceapi
