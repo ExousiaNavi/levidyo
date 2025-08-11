@@ -1,0 +1,13 @@
+{
+    "user_id": "guest_1",
+    "country": "BD",
+    "documentType": "Passport",
+    "fullName": "John Doe",
+    "birthdate": "1992-08-04",
+    "address": "Test Address",
+    "city": "Test City",
+    "postalCode": 12345,
+    "idFront": "base 64 encoded string",
+    "idBack": "base 64 encoded string",
+    "selfie": "base 64 encoded string"
+}

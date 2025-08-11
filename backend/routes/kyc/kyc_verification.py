@@ -44,6 +44,11 @@ def save_base64_image(base64_data: str, folder: Path, filename: str) -> str:
     
     return str(file_path)
 
+def file_to_base64_with_prefix(path: Path) -> str:
+    """Read a file and return base64 with PNG MIME prefix."""
+    with open(path, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+    
 @router.get("/kyc/identification", response_class=HTMLResponse)
 async def kyc_verification(request: Request):
     user = check_auth_kyc(request)
@@ -78,7 +83,22 @@ async def submit_kyc_documents(payload: KYCRequest):
             selfie_source = BASE_DIR / "frontend" / payload.selfie.lstrip("/")
             selfie_path = user_folder / f"selfie_{timestamp}.png"
             shutil.move(selfie_source, selfie_path)  # ✅ Move instead of copy
-            
+
+        # Prepare JSON for 3rd party
+        kyc_data = {
+            "user_id": payload.user_id,
+            "country": payload.country,
+            "documentType": payload.documentType,
+            "fullName": payload.fullName,
+            "birthdate": payload.birthdate,
+            "address": payload.address,
+            "city": payload.city,
+            "postalCode": payload.postalCode,
+            "idFront": file_to_base64_with_prefix(front_path),
+            "idBack": file_to_base64_with_prefix(back_path),  
+            "selfie": file_to_base64_with_prefix(selfie_path)
+        }
+
         print("🔎 KYC Submission Details:")
         print(json.dumps(payload.dict(), indent=2))
 
@@ -86,11 +106,7 @@ async def submit_kyc_documents(payload: KYCRequest):
             "message": "KYC submitted successfully",
             "status": "under_review",
             "user_id": payload.user_id,
-            "files": {
-                "front": front_path,
-                "back": back_path,
-                "selfie": selfie_path,
-            }
+            "kyc_verification": kyc_data
         }
 
     except Exception as e:
