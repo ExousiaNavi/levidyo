@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Levidyo Backend Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#f0f9ff",
+                100: "#e0f2fe",
+                200: "#bae6fd",
+                300: "#7dd3fc",
+                400: "#38bdf8",
+                500: "#0ea5e9",
+                600: "#0284c7",
+                700: "#0369a1",
+                800: "#075985",
+                900: "#0c4a6e",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .folder-structure li {
+        position: relative;
+        padding-left: 1.5rem;
+      }
+      .folder-structure li:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.4em;
+        width: 1em;
+        height: 1em;
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+      .folder-structure li[data-type="folder"]:before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2338bdf8' viewBox='0 0 24 24'%3E%3Cpath d='M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z'/%3E%3C/svg%3E");
+      }
+      .folder-structure li[data-type="file"]:before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%239ca3af' viewBox='0 0 24 24'%3E%3Cpath d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
+      }
+      .copy-btn {
+        transition: all 0.2s ease;
+      }
+      .copy-btn:hover {
+        background-color: rgba(56, 189, 248, 0.1);
+      }
+      .copy-btn.copied {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+      }
+      pre {
+        position: relative;
+      }
+      .dark pre {
+        background-color: #1e293b;
+      }
+      .dark .prose :where(code):not(:where([class~="not-prose"] *)) {
+        background-color: #334155;
+        color: #e2e8f0;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200"
+  >
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+      <!-- Header with theme toggle -->
+      <header class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+          Levidyo Documentation
+        </h1>
+        <button
+          id="theme-toggle"
+          class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
+          <svg
+            id="theme-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <!-- Main content -->
+      <div class="prose dark:prose-invert max-w-none">
+        <!-- Backend Section -->
+        <section
+          class="mb-12 p-6 rounded-lg bg-white dark:bg-gray-800 shadow-md"
+        >
+          <div class="flex items-center mb-4">
+            <div
+              class="bg-primary-100 dark:bg-primary-900 p-3 rounded-full mr-4"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-8 w-8 text-primary-600 dark:text-primary-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+                />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-semibold">Backend Service</h2>
+          </div>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">
+            Backend service for Levidyo — handles authentication, deposits, KYC
+            processing, CRM dashboard, and utility functions.
+          </p>
+          <hr class="my-4 border-gray-200 dark:border-gray-700" />
+
+          <div class="flex items-center mb-4 mt-6">
+            <div
+              class="bg-primary-100 dark:bg-primary-900 p-2 rounded-full mr-3"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-primary-600 dark:text-primary-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold">Project Structure</h3>
+          </div>
+
+          <div class="relative w-full">
+            <!-- Copy Button -->
+            <button
+              class="copy-btn absolute top-2 right-2 px-3 py-1 text-xs rounded-md text-gray-500 dark:text-gray-400"
+            >
+              Copy
+            </button>
+
+            <!-- Tree Container -->
+            <div
+              class="p-6 rounded-lg bg-gray-50 dark:bg-gray-900 font-mono text-lg leading-relaxed space-y-1 border border-gray-200 dark:border-gray-700 overflow-x-auto"
+            >
+              <!-- Root -->
+              <div
+                class="flex items-start flex-nowrap text-xl font-bold text-gray-800 dark:text-gray-100"
+              >
+                <span class="mr-3">📦</span
+                ><span class="whitespace-nowrap">backend</span>
+              </div>
+
+              <!-- core -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">core</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// Core application logic</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">amount.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Retrieves target deposit amount from Firestore</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">auth.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Handles user authentication, session validation &
+                  role-based navigation</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">deposit.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Processes deposit transactions and records in
+                  Firestore</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">firebase.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Initializes Firebase Admin & Firestore connections</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">role.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Fetches and formats user roles from Firestore</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">templates.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Configures Jinja2 template directory for FastAPI</span
+                >
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span>
+                <span class="whitespace-nowrap">users.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Manage user roles in Firestore (exclude super
+                  admins)</span
+                >
+              </div>
+
+              <div
+                class="flex items-start flex-nowrap pl-14 text-red-500"
+              >
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">whitelist.py</span>
+                <span class="ml-2 whitespace-nowrap"
+                  >// Deprecated - IP allowlist</span
+                >
+              </div>
+
+              <!-- data -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">data</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// Static data and JSON</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">players.json</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">submit_kyc.json</span>
+              </div>
+
+              <!-- filters -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">filters</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// Brand-specific logic</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">brand.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Brand to currency mapping and utilities</span>
+                >
+              </div>
+
+              <!-- routes -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">routes</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// API routes</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">crm</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// CRM dashboard</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">crm_dashboard.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// FastAPI router for CRM dashboard with role-based access and template rendering</span>
+              </div>
+
+              <div class="flex items-start flex-nowrap pl-14 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">kyc</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// KYC routes</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">auth_kyc.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Handles KYC login with JSON user validation and session creation</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">kyc.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// KYC endpoints for image upload, ID verification, face detection, encoding/decoding, and session checks</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">kyc_dashboard.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// KYC dashboard showing user status and redirects verified users</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">kyc_data.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// KYC allowed countries and document types with flag emoji generation</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">kyc_verification.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Handles KYC document upload, base64 encoding, and verification page rendering</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-20">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">kyc_verified.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Displays verified KYC status page and redirects unverified users</span>
+              </div>
+
+              <!-- Other route files -->
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">amount.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// API endpoints to get and update deposit target amount with role-based access</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">auth.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Firebase token login/logout with role-based session cookie management and page redirection</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">context.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Sets user context cookies (sub and name) after authentication, then redirects to dashboard</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">dashboard.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Handles dashboard page and API data for deposits, withdrawals, user roles, and brand/currency filtering</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">deposit.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Renders the deposits page for authenticated admin users</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">empty.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Fallback route showing blank page or redirects based on user role</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">profile.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Renders user profile page with user info, roles, and target; redirects CRM users</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">username.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// API endpoint to validate username availability</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">users.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Manage user listing, creation, and role updates via API endpoints</span>
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">verification.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Handle submission of user verification data (face, ID front/back)</span>
+              </div>
+
+              <!-- sessions -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">sessions</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// Session management</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">session_manager.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Utility to create session cookies with user roles and redirect</span>
+              </div>
+
+              <!-- utils -->
+              <div class="flex items-start flex-nowrap pl-8 font-semibold">
+                <span class="mr-3">📂</span
+                ><span class="whitespace-nowrap">utils</span>
+                <span class="ml-2 text-gray-500 text-sm whitespace-nowrap"
+                  >// Utility functions</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-14">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">stego_utils.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap">// Image watermarking with face-aware placement and LSB steganography encoding/decoding</span>
+              </div>
+
+              <!-- Loose files -->
+              <div class="flex items-start flex-nowrap pl-8">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">.env</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Environment vars</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-8">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">config.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Config settings</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-8">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">main.py</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// App entry point</span
+                >
+              </div>
+              <div class="flex items-start flex-nowrap pl-8">
+                <span class="mr-3">📜</span
+                ><span class="whitespace-nowrap">requirements.txt</span>
+                <span class="ml-2 text-gray-500 whitespace-nowrap"
+                  >// Dependencies</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h4 class="font-medium text-lg mb-3">Key Features</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-green-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">Authentication</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Secure user authentication with role-based access control.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-blue-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">Deposit Handling</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Process and manage financial deposits with validation.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-purple-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">KYC Processing</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Know Your Customer verification with document validation.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-yellow-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">CRM Dashboard</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Customer relationship management with analytics.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Frontend Section -->
+        <section
+          class="mb-12 p-6 rounded-lg bg-white dark:bg-gray-800 shadow-md"
+        >
+          <div class="flex items-center mb-4">
+            <div
+              class="bg-primary-100 dark:bg-primary-900 p-3 rounded-full mr-4"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-8 w-8 text-primary-600 dark:text-primary-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-semibold">Frontend Interface</h2>
+          </div>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">
+            Frontend interface for Levidyo — includes static assets, templates,
+            JavaScript modules for KYC and camera handling, and upload handling.
+          </p>
+          <hr class="my-4 border-gray-200 dark:border-gray-700" />
+
+          <div class="flex items-center mb-4 mt-6">
+            <div
+              class="bg-primary-100 dark:bg-primary-900 p-2 rounded-full mr-3"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-primary-600 dark:text-primary-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold">Project Structure</h3>
+          </div>
+
+          <div class="relative w-full">
+            <button
+              class="copy-btn absolute top-2 right-2 px-3 py-1 text-xs rounded-md text-gray-500 dark:text-gray-400"
+            >
+              Copy
+            </button>
+
+            <div
+              class="overflow-x-auto p-6 rounded-lg bg-gray-50 dark:bg-gray-900 font-mono text-lg leading-relaxed space-y-1 border border-gray-200 dark:border-gray-700"
+            >
+              <div class="whitespace-nowrap">
+                📦 <span class="font-semibold">frontend</span>
+              </div>
+
+              <div class="whitespace-nowrap">
+                📂 <span class="font-semibold">static</span>
+              </div>
+              <div class="ml-6 whitespace-nowrap">📂 css</div>
+              <div class="ml-10 whitespace-nowrap">📜 login.css</div>
+              <div class="ml-10 whitespace-nowrap">📜 styles.css</div>
+
+              <div class="ml-6 whitespace-nowrap">📂 haarcascades</div>
+              <div class="ml-10 whitespace-nowrap">
+                📜 haarcascade_frontalface_default.xml
+              </div>
+
+              <div class="ml-6 whitespace-nowrap">📂 js</div>
+              <div class="ml-10 whitespace-nowrap">📂 module</div>
+              <div class="ml-14 whitespace-nowrap">📜 camera.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 capture.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 delete.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 detection.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 error.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 loader.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 models.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 review.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 state.js</div>
+              <div class="ml-14 whitespace-nowrap">
+                📜 submitVerification.js
+              </div>
+              <div class="ml-14 whitespace-nowrap">📜 upload.js</div>
+              <div class="ml-14 whitespace-nowrap">📜 username.js</div>
+
+              <div class="ml-10 whitespace-nowrap">📜 camera copy.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 camera.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 camerav2.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 face-api.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 face-api.js.map</div>
+              <div class="ml-10 whitespace-nowrap">📜 face-api.min.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 kyc.js</div>
+              <div class="ml-10 whitespace-nowrap">📜 steganography.js</div>
+
+              <div class="ml-6 whitespace-nowrap">📂 logo</div>
+              <div class="ml-10 whitespace-nowrap">📜 b.png</div>
+              <div class="ml-10 whitespace-nowrap">📜 lg.png</div>
+
+              <div class="ml-6 whitespace-nowrap">📂 models</div>
+              <div class="ml-10 whitespace-nowrap">
+                📜 face_landmark_68_model-shard1
+              </div>
+              <div class="ml-10 whitespace-nowrap">
+                📜 face_landmark_68_model-weights_manifest.json
+              </div>
+              <div class="ml-10 whitespace-nowrap">
+                📜 tiny_face_detector_model-shard1
+              </div>
+              <div class="ml-10 whitespace-nowrap">
+                📜 tiny_face_detector_model-weights_manifest.json
+              </div>
+
+              <div class="ml-6 whitespace-nowrap">📂 templates</div>
+              <div class="ml-10 whitespace-nowrap">📜 card.png</div>
+              <div class="ml-10 whitespace-nowrap">📜 card1.png</div>
+
+              <div class="ml-6 whitespace-nowrap">📂 uploads</div>
+              <div class="ml-10 whitespace-nowrap">📂 bin</div>
+              <div class="ml-14 whitespace-nowrap">
+                📜 20250811162725_b0d5d80d056446f294b27d388109e36b.png
+              </div>
+              <div class="ml-10 whitespace-nowrap">📂 kyc</div>
+              <div class="ml-14 whitespace-nowrap">📂 guest_1</div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 back_2025081116.png
+              </div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 front_2025081116.png
+              </div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 selfie_2025081116.png
+              </div>
+
+              <div class="ml-6 whitespace-nowrap">📂 templates</div>
+              <div class="ml-10 whitespace-nowrap">📂 components</div>
+              <div class="ml-14 whitespace-nowrap">📂 kyc</div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 kyc_not_verified.html
+              </div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 kyc_verified.html
+              </div>
+              <div class="ml-14 whitespace-nowrap">📜 sidebar.html</div>
+
+              <div class="ml-10 whitespace-nowrap">📂 pages</div>
+              <div class="ml-14 whitespace-nowrap">📂 admin</div>
+              <div class="ml-[72px] whitespace-nowrap">📂 components</div>
+              <div class="ml-[96px] whitespace-nowrap">📜 card.html</div>
+              <div class="ml-[96px] whitespace-nowrap">
+                📜 deposit-card.html
+              </div>
+              <div class="ml-[96px] whitespace-nowrap">
+                📜 deposit-chart.html
+              </div>
+              <div class="ml-[96px] whitespace-nowrap">
+                📜 pending-deposit-card.html
+              </div>
+              <div class="ml-[96px] whitespace-nowrap">
+                📜 pending-withdraw-card.html
+              </div>
+              <div class="ml-[72px] whitespace-nowrap">📜 dashboard.html</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 deposits.html</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 profile.html</div>
+
+              <div class="ml-14 whitespace-nowrap">📂 auth</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 login.html</div>
+
+              <div class="ml-14 whitespace-nowrap">📂 crm</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 dashboard.html</div>
+
+              <div class="ml-14 whitespace-nowrap">📂 kyc</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 auth.html</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 dashboard.html</div>
+              <div class="ml-[72px] whitespace-nowrap">📜 index.html</div>
+              <div class="ml-[72px] whitespace-nowrap">
+                📜 verification.html
+              </div>
+              <div class="ml-[72px] whitespace-nowrap">📜 verified.html</div>
+
+              <div class="ml-14 whitespace-nowrap">📜 blank.html</div>
+              <div class="ml-14 whitespace-nowrap">📜 camera.html</div>
+              <div class="ml-14 whitespace-nowrap">📜 camera1.html</div>
+              <div class="ml-14 whitespace-nowrap">📜 unauthorized.html</div>
+
+              <div class="ml-10 whitespace-nowrap">📜 base.html</div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h4 class="font-medium text-lg mb-3">Key Features</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-blue-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">Camera Integration</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Real-time camera handling for document and selfie capture.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-green-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">Face Detection</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Advanced face detection and recognition capabilities.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-purple-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <h5 class="font-medium">File Upload</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Secure document upload and management system.
+                </p>
+              </div>
+              <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-yellow-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                    />
+                  </svg>
+                  <h5 class="font-medium">Dashboard Templates</h5>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Responsive admin and CRM dashboard interfaces.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // Theme toggle functionality
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeIcon = document.getElementById("theme-icon");
+      const html = document.documentElement;
+
+      // Check for saved theme preference or use preferred color scheme
+      const savedTheme =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+
+      // Apply the saved theme
+      html.classList.add(savedTheme);
+      updateThemeIcon(savedTheme);
+
+      themeToggle.addEventListener("click", () => {
+        if (html.classList.contains("dark")) {
+          html.classList.remove("dark");
+          localStorage.setItem("theme", "light");
+          updateThemeIcon("light");
+        } else {
+          html.classList.add("dark");
+          localStorage.setItem("theme", "dark");
+          updateThemeIcon("dark");
+        }
+      });
+
+      function updateThemeIcon(theme) {
+        if (theme === "dark") {
+          themeIcon.innerHTML =
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+        } else {
+          themeIcon.innerHTML =
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+        }
+      }
+
+      // Copy button functionality
+      document.querySelectorAll(".copy-btn").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const pre = e.target.parentElement.querySelector("pre code");
+          const text = pre.textContent;
+
+          navigator.clipboard.writeText(text).then(() => {
+            e.target.textContent = "Copied!";
+            e.target.classList.add("copied");
+            setTimeout(() => {
+              e.target.textContent = "Copy";
+              e.target.classList.remove("copied");
+            }, 2000);
+          });
+        });
+      });
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.querySelector(this.getAttribute("href")).scrollIntoView({
+            behavior: "smooth",
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
