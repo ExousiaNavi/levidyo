@@ -6,6 +6,7 @@ from pathlib import Path
 from backend.config import settings
 from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty,username, verification
 from backend.routes.kyc import auth_kyc, kyc, kyc_dashboard, kyc_verification, kyc_verified
+from backend.routes.documentation import index as documentation_index
 # crm routes
 from backend.routes.crm import crm_dashboard
 import backend.core.firebase  # auto-runs initialization
@@ -52,6 +53,9 @@ app.include_router(kyc_verified.router)
 
 # crm routes
 app.include_router(crm_dashboard.router)
+
+# Documentation routes
+app.include_router(documentation_index.router)
 
 # Empty route
 app.include_router(empty.router)
