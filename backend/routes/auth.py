@@ -138,12 +138,38 @@ async def login(request: Request, token: str = Form(...)):
         error_response.delete_cookie("user_roles")
         return error_response
     
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
+import json
+
+router = APIRouter()
+
 @router.get("/logout")
-async def logout():
-    response = RedirectResponse(url="/")
-    response.delete_cookie("session")
-    response.delete_cookie("user_roles")
-    response.delete_cookie("auth_token")
-    response.delete_cookie("sub")
-    response.delete_cookie("name")
+async def logout(request: Request):
+    # Get cookies
+    session_cookie = request.cookies.get("session")
+    roles_cookie = request.cookies.get("user_roles")
+
+    # Default redirect
+    redirect_url = "/"
+
+    # Parse user_roles JSON if it exists
+    if roles_cookie:
+        try:
+            role_data = json.loads(roles_cookie)
+            # Check if player flag is present and true
+            if role_data.get("is_player"):
+                redirect_url = "/kyc"
+        except json.JSONDecodeError:
+            pass
+
+    # Log the session being logged out
+    print(f"Logging out user with session: {session_cookie} and role: {roles_cookie}")
+
+    # Clear cookies
+    response = RedirectResponse(url=redirect_url)
+    for cookie_name in ["session", "user_roles", "auth_token", "sub", "name"]:
+        response.delete_cookie(cookie_name)
+
     return response
+

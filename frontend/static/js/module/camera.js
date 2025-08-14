@@ -140,72 +140,36 @@ export async function setupCameraAndRunDetection(
 
 // setup camera for back and front
 export async function startIDCamera(
-  currentStep, // variables
-  idCaptureTitle, // variables
   stream, // variables
   idVideo, // variables
   idOverlay, // variables
-  isMobileNotUsed, // variables not sued for now
-  shouldFaceUser, // variables
   stopCamera // function
-  // setStep,//function
 ) {
-  await stopCamera();
-
-  const isMobile = window.innerWidth <= 768; // 👈 auto-detect each time
-
-  const label =
-    currentStep === "idFront" ? "Capture Front of ID" : "Capture Back of ID";
-  if (idCaptureTitle) idCaptureTitle.textContent = label;
-
+  const isMobile = window.innerWidth <= 768; // Detect mobile
   try {
+    // Always request the back (environment) camera
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
-        // facingMode: shouldFaceUser ? "user" : "environment",
-        facingMode: "environment",
+        facingMode: { exact: "environment" }, // Force back camera only
         width: { ideal: isMobile ? 720 : 1280 },
         height: { ideal: isMobile ? 1280 : 720 }, // Higher for portrait
-        aspectRatio: 1.585, // Request ID card aspect ratio if possible
+        aspectRatio: 1.585, // ID card ratio
       },
     });
 
     idVideo.srcObject = stream;
     await idVideo.play();
     await adjustOverlaySize();
+
   } catch (error) {
-    console.warn("Back camera not available:", error);
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: "environment",
-          width: { ideal: isMobile ? 720 : 1280 },
-          height: { ideal: isMobile ? 1280 : 720 }, // Higher for portrait
-          aspectRatio: 1.585, // Request ID card aspect ratio if possible
-        },
-      });
-
-      idVideo.srcObject = stream;
-      await idVideo.play();
-      await adjustOverlaySize();
-      //   const fallbackStream = await navigator.mediaDevices.getUserMedia({
-      //     audio: false,
-      //     video: {
-      //       facingMode: "user",
-      //       width: { ideal: 1280 },
-      //       height: { ideal: 720 },
-      //     },
-      //   });
-
-      //   idVideo.srcObject = fallbackStream;
-      //   await idVideo.play();
-      //   idVideo.style.transform = "scaleX(-1)";
-      //   await adjustOverlaySize();
-    } catch (fallbackError) {
-      console.error("No camera available:", fallbackError);
-      alert("Failed to access any camera. Check permissions and try again.");
+    console.error("Back camera not available:", error);
+    const cameraError = document.getElementById("cameraError");
+    if (cameraError) {
+      cameraError.classList.remove("hidden");
     }
+    // alert("Back camera is required to capture your ID. Please enable permissions or switch to a device with a back camera.");
+    // if (stopCamera) stopCamera();
   }
 
   async function adjustOverlaySize() {

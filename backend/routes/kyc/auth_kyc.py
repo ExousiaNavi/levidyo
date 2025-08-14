@@ -46,7 +46,7 @@ async def login(
             is_admin=is_admin,
             is_crm=is_crm,
             is_player=True,
-            redirect_path="/kyc/dashboard"
+            redirect_path="/kyc/identification"
         )
 
     except Exception as e:

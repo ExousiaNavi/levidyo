@@ -33,8 +33,11 @@
 </div>
 
 <!-- Dashboard Content -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch">
-  <div class="flex flex-col gap-3 h-full">
+<div
+  id="kyc_dash"
+  class="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full h-full items-stretch"
+>
+  <div class="flex flex-col gap-3 h-full items-center justify-center">
     {% if kyc_status %} {% include "components/kyc/kyc_verified.html" ignore
     missing %} {% else %} {% set docs = doc_types %} {% include
     "components/kyc/kyc_not_verified.html" ignore missing %} {% endif %}
@@ -69,12 +72,15 @@
       step2: document.getElementById("step2"),
       step3: document.getElementById("step3"),
       step4: document.getElementById("step4"),
+      step5: document.getElementById("step5"),
+      step6: document.getElementById("step6"),
     };
     const steps = {
       one: document.getElementById("stepOne"),
       two: document.getElementById("stepTwo"),
       three: document.getElementById("stepThree"),
       four: document.getElementById("stepFour"),
+      five: document.getElementById("stepFive"),
       review: document.getElementById("stepReview"),
     };
 
@@ -85,8 +91,8 @@
     const nextToStep2 = document.getElementById("nextToStep2");
 
     // Step 2 elements
-    const frontUpload = document.getElementById("frontUpload");
-    const backUpload = document.getElementById("backUpload");
+    //const frontUpload = document.getElementById("frontUpload");
+    //const backUpload = document.getElementById("backUpload");
     const nextToStep3 = document.getElementById("nextToStep3");
     const backToStep1 = document.getElementById("backToStep1");
     //const frontPreview = document.getElementById("frontPreview");
@@ -96,8 +102,10 @@
 
     // Step 3 elements
     const selfieUpload = document.getElementById("selfieUpload");
+    const nextToStep5 = document.getElementById("nextToStep5");
     const nextToStep4 = document.getElementById("nextToStep4");
     const backToStep2 = document.getElementById("backToStep2");
+    const backToStep5 = document.getElementById("backToStep5");
     const selfiePreview = document.getElementById("selfieUploadPreview");
     const selfiePreviewContainer = document.getElementById("selfiePreviewContainer");
 
@@ -227,30 +235,33 @@
     });
 
     nextToStep2.addEventListener("click", () => {
+      //lets initialize the front capturing camera
       steps.one.classList.add("hidden");
       steps.two.classList.remove("hidden");
+      stepBars.step2.classList.replace("bg-gray-200", "bg-green-500");
     });
 
     // ---- STEP 2 ----
-    const validateStep2 = () => {
-      nextToStep3.disabled = !(
-        frontUpload.files.length && backUpload.files.length
-      );
-    };
+    //const validateStep2 = () => {
+    //  nextToStep3.disabled = !(
+    //    frontUpload.files.length && backUpload.files.length
+    //  );
+    //};
 
-    setupDropZone('frontDropZone', frontUpload, 'frontPreview', 'frontIcon', 'frontText', 'frontRemoveBtn');
-    frontUpload.addEventListener("change", () => {
-      //previewFile(frontUpload, frontPreview, frontContainer);
-      validateStep2();
-    });
+    //setupDropZone('frontDropZone', frontUpload, 'frontPreview', 'frontIcon', 'frontText', 'frontRemoveBtn');
+    //frontUpload.addEventListener("change", () => {
+    //  //previewFile(frontUpload, frontPreview, frontContainer);
+    //  validateStep2();
+    //});
 
-    setupDropZone('backDropZone', backUpload, 'backPreview', 'backIcon', 'backText', 'backRemoveBtn');
-    backUpload.addEventListener("change", () => {
-      //previewFile(backUpload, backPreview, backContainer);
-      validateStep2();
-    });
+    //setupDropZone('backDropZone', backUpload, 'backPreview', 'backIcon', 'backText', 'backRemoveBtn');
+    //backUpload.addEventListener("change", () => {
+    //  //previewFile(backUpload, backPreview, backContainer);
+    //  validateStep2();
+    //});
 
-    nextToStep3.addEventListener("click", () => {
+    nextToStep3.addEventListener("click", async () => {
+      //sending request to server to validate the front id
       steps.two.classList.add("hidden");
       steps.three.classList.remove("hidden");
       stepBars.step3.classList.replace("bg-gray-200", "bg-green-500");
@@ -291,7 +302,13 @@
       stepBars.step3.classList.replace("bg-green-500", "bg-gray-200");
     });
 
-    // ---- STEP 4 ----
+    nextToStep5.addEventListener("click", () => {
+      steps.four.classList.add("hidden");
+      steps.five.classList.remove("hidden");
+      stepBars.step5.classList.replace("bg-gray-200", "bg-green-500");
+    });
+
+    // ---- STEP 5 ----
     const validateStep4 = () => {
       nextToReview.disabled = !(
         fullName.value &&
@@ -310,7 +327,8 @@
     });
 
     nextToReview.addEventListener("click", () => {
-      steps.four.classList.add("hidden");
+      stepBars.step6.classList.replace("bg-gray-200", "bg-green-500");
+      steps.five.classList.add("hidden");
       steps.review.classList.remove("hidden");
 
       reviewCountry.textContent = country.options[country.selectedIndex].text;
@@ -321,8 +339,8 @@
       reviewCity.textContent = city.value;
       reviewPostalCode.textContent = postalCode.value;
 
-      reviewFrontImg.src = frontPreview.src;
-      reviewBackImg.src = backPreview.src;
+      reviewFrontImg.src = localStorage.getItem("frontUpload");
+      reviewBackImg.src = localStorage.getItem("backUpload");
       reviewSelfieImg.src = localStorage.getItem("capturedFace");
     });
 
@@ -332,10 +350,18 @@
       stepBars.step4.classList.replace("bg-green-500", "bg-gray-200");
     });
 
-    // ---- REVIEW ----
+    // ---- Step 5 ----
     backToStep4.addEventListener("click", () => {
-      steps.review.classList.add("hidden");
+      steps.five.classList.add("hidden");
       steps.four.classList.remove("hidden");
+      stepBars.step5.classList.replace("bg-green-500", "bg-gray-200");
+    });
+
+     // ---- Step 5 ----
+    backToStep5.addEventListener("click", () => {
+      steps.review.classList.add("hidden");
+      steps.five.classList.remove("hidden");
+      stepBars.step6.classList.replace("bg-green-500", "bg-gray-200");
     });
 
     submitKycFinal.addEventListener("click", async () => {
@@ -371,20 +397,21 @@
 
             document.getElementById("stepReview").classList.add("hidden");
             document.getElementById("kycUnderReview").classList.remove("hidden");
+            stepBars.step6.classList.replace("bg-gray-200", "bg-green-500");
             localStorage.clear();
             } else {
-            alert("❌ Submission failed. Please try again.");
+            console.log("❌ Submission failed. Please try again.");
             }
         } catch (err) {
             console.error("KYC submission error:", err);
-            alert("⚠️ Network error. Please try again.");
+            console.log("⚠️ Network error. Please try again.");
         }
 
     });
 
 
     document.getElementById("backToDashboard").addEventListener("click", () => {
-        window.location.href = "/kyc/dashboard"; // Change to your dashboard URL
+        window.location.href = "/kyc/identification"; // Change to your dashboard URL
     });
 
 
@@ -397,12 +424,13 @@
       const val = localStorage.getItem(id);
       if (val) document.getElementById(id).value = val;
     });
+
     if (localStorage.getItem("frontUpload"))
-      frontPreview.src = localStorage.getItem("frontUpload");
+      reviewFrontImg.src = localStorage.getItem("frontUpload");
     if (localStorage.getItem("backUpload"))
-      backPreview.src = localStorage.getItem("backUpload");
+      reviewBackImg.src = localStorage.getItem("backUpload");
     if (localStorage.getItem("selfieUpload"))
-      selfiePreview.src = localStorage.getItem("selfieUpload");
+      reviewSelfieImg.src = localStorage.getItem("capturedFace");
   });
 </script>
 

@@ -1,9 +1,12 @@
 import json
 import shutil
 import base64
+import cv2
+import os
+import numpy as np
 from fastapi import APIRouter, Request, HTTPException
 from backend.core.templates import templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from backend.core.auth import NAV_LINKS_KYC, check_auth_kyc
 from datetime import datetime
 from pydantic import BaseModel
@@ -64,7 +67,7 @@ async def kyc_verification(request: Request):
             "doc_types": doc_types,
             "nav_links": NAV_LINKS_KYC,
             "current_page": "Identification",
-        })
+        }) 
 
 @router.post("/kyc/submit-documents")
 async def submit_kyc_documents(payload: KYCRequest):
@@ -101,6 +104,11 @@ async def submit_kyc_documents(payload: KYCRequest):
 
         print("🔎 KYC Submission Details:")
         print(json.dumps(payload.dict(), indent=2))
+        
+        # ✅ Clear the directory after data is prepared
+        shutil.rmtree(user_folder)
+        print(f"🗑️ Cleared folder: {user_folder}")
+
 
         return {
             "message": "KYC submitted successfully",
@@ -111,3 +119,160 @@ async def submit_kyc_documents(payload: KYCRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@router.post("/kyc/document")
+async def kyc_document(request: Request):
+    try:
+        payload = await request.json()
+        print(payload)
+        user_folder = "user_uploads"  # Or your existing user folder logic
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create debug folder if it doesn't exist
+        # debug_folder = os.path.join(user_folder, "debug")
+        # os.makedirs(debug_folder, exist_ok=True)
+        
+        # Process front image
+        front_result = None
+        if payload["side"] == "idFront":
+            front_result, front_debug_img = validate_centering_with_debug(
+                payload['image'], 
+                "front"
+            )
+            # Commented out debug image saving
+            # front_debug_path = os.path.join(debug_folder, f"front_debug_{timestamp}.png")
+            # cv2.imwrite(front_debug_path, front_debug_img)
+        
+        # Process back image
+        back_result = None
+        if payload["side"] == "idBack":
+            back_result, back_debug_img = validate_centering_with_debug(
+                payload['image'], 
+                "back"
+            )
+            # Commented out debug image saving
+            # back_debug_path = os.path.join(debug_folder, f"back_debug_{timestamp}.png")
+            # cv2.imwrite(back_debug_path, back_debug_img)
+        
+        # Check results
+        errors = []
+        if front_result and not front_result.get('is_centered', False):
+            errors.append("Front document is not properly centered")
+        if back_result and not back_result.get('is_centered', False):
+            errors.append("Back document is not properly centered")
+        
+        if errors:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": " ".join(errors),
+                    "details": {
+                        "front": front_result,
+                        "back": back_result
+                    }
+                }
+            )
+        
+        return {
+            "status": "success",
+            "message": "Documents validated",
+            "details": {
+                "front": front_result,
+                "back": back_result
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+def validate_centering_with_debug(base64_image, image_type, center_threshold=0.1):
+    """Validate image centering and return result with debug image"""
+    try:
+        # Clean the base64 string if it contains headers
+        if isinstance(base64_image, str):
+            if 'base64,' in base64_image:
+                base64_image = base64_image.split('base64,')[1]
+            base64_image = base64_image.strip()
+            
+            # Check if string is empty after cleaning
+            if not base64_image:
+                raise ValueError("Empty base64 string provided")
+            
+            # Ensure proper padding
+            padding = len(base64_image) % 4
+            if padding:
+                base64_image += '=' * (4 - padding)
+        
+        # Decode image
+        image_data = base64.b64decode(base64_image)
+        nparr = np.frombuffer(image_data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            raise ValueError("Failed to decode image - possibly invalid or corrupted image data")
+        
+        # Rest of your processing code...
+        debug_img = img.copy()
+        height, width = img.shape[:2]
+        image_center = (width/2, height/2)
+        
+        # Process image (using contour method)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            raise ValueError("No objects detected in image")
+        
+        # Get largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        object_center = (x + w/2, y + h/2)
+        
+        # Calculate deviation
+        x_deviation = abs(object_center[0] - image_center[0]) / width
+        y_deviation = abs(object_center[1] - image_center[1]) / height
+        max_deviation = max(x_deviation, y_deviation)
+        
+        # Draw visualization elements
+        cv2.rectangle(debug_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.circle(debug_img, (int(object_center[0]), int(object_center[1])), 5, (255, 0, 0), -1)
+        cv2.circle(debug_img, (int(image_center[0]), int(image_center[1])), 5, (0, 0, 255), -1)
+        
+        # Add text annotations
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(debug_img, f"X Dev: {x_deviation:.2f}", (10, 30), font, 0.7, (255, 255, 255), 2)
+        cv2.putText(debug_img, f"Y Dev: {y_deviation:.2f}", (10, 60), font, 0.7, (255, 255, 255), 2)
+        cv2.putText(debug_img, f"Max Dev: {max_deviation:.2f}", (10, 90), font, 0.7, (255, 255, 255), 2)
+        
+        is_centered = max_deviation <= center_threshold
+        status = "CENTERED" if is_centered else "NOT CENTERED"
+        color = (0, 255, 0) if is_centered else (0, 0, 255)
+        cv2.putText(debug_img, status, (width-200, 30), font, 0.7, color, 2)
+        
+        return {
+            "is_centered": is_centered,
+            "max_deviation": float(max_deviation),
+            "threshold": float(center_threshold),
+            "object_center": {"x": float(object_center[0]), "y": float(object_center[1])},
+            "image_center": {"x": float(image_center[0]), "y": float(image_center[1])},
+            "bounding_box": {"x": x, "y": y, "width": w, "height": h}
+        }, debug_img
+        
+    except Exception as e:
+        error_img = np.zeros((300, 500, 3), dtype=np.uint8)
+        cv2.putText(error_img, f"Error processing {image_type}:", (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(error_img, str(e), (10, 70), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        
+        return {
+            "is_centered": False,
+            "error": str(e)
+        }, error_img

@@ -1,9 +1,9 @@
 import { loadModels } from "./module/models.js";
-import { setupCameraAndRunDetection } from "./module/camera.js";
+import { setupCameraAndRunDetection, startIDCamera } from "./module/camera.js";
 import { hideCameraLoading, showCameraLoading } from "./module/loader.js";
 import { runDetection } from "./module/detection.js";
 import { showCameraError, hideCameraError } from "./module/error.js";
-import { captureFace } from "./module/capture.js";
+import { captureFace, captureID } from "./module/capture.js";
 import { getCapturedFace, setCapturedFace } from "./module/state.js";
 import { delete_uploaded_face } from "./module/delete.js";
 
@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       navigator.userAgent
     );
   const captureBtn = document.getElementById("capture");
+  const nextToStep4 = document.getElementById("nextToStep4");
+  const nextToStep2 = document.getElementById("nextToStep2");
   const nextToStep3 = document.getElementById("nextToStep3");
   const submitKycFinal = document.getElementById("submitKycFinal");
   const statusText = document.getElementById("statusText"); //not on dom
@@ -28,9 +30,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   const previewPage = document.getElementById("previewPage");
   const previewImage = document.getElementById("previewImage");
   const tryAgainBtn = document.getElementById("tryAgain");
-  const continueBtn = document.getElementById("continue");
+  const continueBtn = document.getElementById("continueFaceBtn");
   const smainLoader = document.getElementById("mainLoader");
   const sloaderContent = document.getElementById("loader-content");
+  const sloaderContent2 = document.getElementById("loader-content2");
+
+  // For ID capture Front
+  const idCapturePage = document.getElementById("idCapturePage");
+  const idCaptureTitle = document.getElementById("idCaptureTitle");
+  const idVideo = document.getElementById("idVideo");
+  const idCanvas = document.getElementById("idCanvas");
+  const idOverlay = document.getElementById("idOverlay");
+  const captureFrontIdBtn = document.getElementById("captureIdFront");
+
+  // For ID capture Back
+  const idBackCapturePage = document.getElementById("idBackCapturePage");
+  const idBackCaptureTitle = document.getElementById("idBackCaptureTitle");
+  const idBackVideo = document.getElementById("idBackVideo");
+  const idBackCanvas = document.getElementById("idBackCanvas");
+  const idBackOverlay = document.getElementById("idBackOverlay");
+  const captureBackIdBtn = document.getElementById("captureIdBack");
 
   let shouldFaceUser = true;
   let stream = null;
@@ -54,24 +73,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  async function stopCameraForced() {
-    const video = document.querySelector("video");
+  async function stopCameraForced(videoElement) {
+    if (!videoElement) return;
 
-    // Stop all tracks in the stream
-    if (video?.srcObject) {
-      video.srcObject.getTracks().forEach((track) => {
-        track.stop(); // Force stop each track
+    const currentStream = videoElement.srcObject;
+    if (currentStream instanceof MediaStream) {
+      currentStream.getTracks().forEach((track) => {
+        track.stop();
       });
-      video.srcObject = null; // Disconnect the stream
     }
 
-    // Optional: Stop the video element itself
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-    }
+    videoElement.pause();
+    videoElement.srcObject = null;
 
-    // Clear detection interval if set
     if (
       typeof detectionInterval !== "undefined" &&
       detectionInterval !== null
@@ -80,21 +94,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       detectionInterval = null;
     }
 
-    // Release stream variable if used
-    if (typeof stream !== "undefined") {
-      stream = null;
-    }
-
-    // Optional: Log to confirm
-    console.log("Camera forcibly stopped.");
+    console.log(`Camera forcibly stopped for video id=${videoElement.id}`);
   }
 
+  async function clearCamera() {
+    await stopCameraForced(document.getElementById("idVideo"));
+    await stopCameraForced(document.getElementById("idBackVideo"));
+    await stopCameraForced(document.getElementById("video"));
+  }
   // ===========================
   // EVENT BINDINGS
   // ===========================
   if (submitKycFinal) {
     submitKycFinal.addEventListener("click", async () => {
-      await stopCameraForced();
+      await clearCamera();
       sloaderContent.textContent = "submitting KYC";
       smainLoader.classList.remove("hidden");
       setTimeout(() => {
@@ -103,8 +116,195 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  if (nextToStep2) {
+    nextToStep2.addEventListener("click", async () => {
+      // alert("Please capture your ID before proceeding to the next step.");
+      await stopCamera();
+      await startIDCamera(
+        // await getStep(),
+        // idCaptureTitle,
+        stream,
+        idVideo,
+        idOverlay,
+        isMobile
+        // await getShouldFaceUser(),
+        // stopCamera
+      );
+    });
+  }
+
+  // retry camera for id capture when no back camera found
+  document
+    .getElementById("retryCameraBtn")
+    .addEventListener("click", async () => {
+      await clearCamera();
+      document.getElementById("cameraError").classList.add("hidden");
+      await startIDCamera(
+        // await getStep(),
+        // idCaptureTitle,
+        stream,
+        idVideo,
+        idOverlay,
+        isMobile,
+        // await getShouldFaceUser(),
+        // stopCamera
+      );
+
+      
+    });
+
+  if (captureFrontIdBtn) {
+    captureFrontIdBtn.addEventListener("click", async () => {
+      const success = await captureID(
+        "idFront",
+        idCanvas,
+        idVideo,
+        shouldFaceUser,
+        startIDCamera
+      );
+
+      if (success) {
+        console.log("✅ ID front captured successfully.");
+        await clearCamera();
+        idCapturePage.classList.add("hidden");
+        // open the id preview page
+        document
+          .getElementById("frontIdPreviewPage")
+          .classList.remove("hidden");
+        document.getElementById("frontIdPreviewImage").src =
+          localStorage.getItem("frontUpload");
+      } else {
+        console.log("❌ Failed to capture ID front.");
+      }
+    });
+  }
+
+  document
+    .getElementById("tryAgainFontId")
+    .addEventListener("click", async () => {
+      // Reset the front ID preview
+      document.getElementById("frontIdPreviewPage").classList.add("hidden");
+      document.getElementById("frontIdPreviewImage").src = "";
+
+      // Show the ID capture page again
+      idCapturePage.classList.remove("hidden");
+
+      // Clear the local storage for front upload
+      localStorage.removeItem("frontUpload");
+
+      // Restart the camera
+      await startIDCamera(
+        // await getStep(),
+        // idCaptureTitle,
+        stream,
+        idVideo,
+        idOverlay,
+        isMobile
+        // await getShouldFaceUser(),
+        // stopCamera
+      );
+    });
+
+  document.getElementById("backToStep1").addEventListener("click", async () => {
+    await clearCamera();
+  });
+
+  document
+    .getElementById("continueFrontId")
+    .addEventListener("click", async (e) => {
+      document.getElementById("nextToStep3").disabled = false;
+      await clearCamera();
+      e.currentTarget.classList.add("hidden"); // Works for the clicked button
+      // this.classList.add("hidden");
+      // alert(
+      //   "Back ID capture is not implemented yet. Please proceed with the next steps."
+      // );
+    });
+
+  // ===========================
+  // ID Back Capture
+  // ===========================
   if (nextToStep3) {
     nextToStep3.addEventListener("click", async () => {
+      // alert("Please capture your ID before proceeding to the next step.");
+      await stopCamera();
+      await startIDCamera(
+        // await getStep(),
+        // idCaptureTitle,
+        stream,
+        idBackVideo,
+        idBackOverlay,
+        isMobile
+        // await getShouldFaceUser(),
+        // stopCamera
+      );
+    });
+  }
+  if (captureBackIdBtn) {
+    captureBackIdBtn.addEventListener("click", async () => {
+      const success = await captureID(
+        "idBack",
+        idBackCanvas,
+        idBackVideo,
+        shouldFaceUser,
+        startIDCamera
+      );
+
+      if (success) {
+        console.log("✅ ID front captured successfully.");
+        await clearCamera();
+        idBackCapturePage.classList.add("hidden");
+        // open the id preview page
+        document.getElementById("backIdPreviewPage").classList.remove("hidden");
+        document.getElementById("backIdPreviewImage").src =
+          localStorage.getItem("backUpload");
+      } else {
+        console.log("❌ Failed to capture ID Back.");
+      }
+    });
+  }
+  document
+    .getElementById("tryAgainBackId")
+    .addEventListener("click", async () => {
+      // Reset the front ID preview
+      document.getElementById("backIdPreviewPage").classList.add("hidden");
+      document.getElementById("backIdPreviewImage").src = "";
+
+      // Show the ID capture page again
+      idBackCapturePage.classList.remove("hidden");
+
+      // Clear the local storage for front upload
+      localStorage.removeItem("backUpload");
+
+      // Restart the camera
+      await startIDCamera(
+        // await getStep(),
+        // idCaptureTitle,
+        stream,
+        idBackVideo,
+        idBackOverlay,
+        isMobile
+        // await getShouldFaceUser(),
+        // stopCamera
+      );
+    });
+  document
+    .getElementById("continueBackId")
+    .addEventListener("click", async (e) => {
+      document.getElementById("nextToStep4").disabled = false;
+      await clearCamera();
+      e.currentTarget.classList.add("hidden"); // Works for the clicked button
+      // this.classList.add("hidden");
+      // alert(
+      //   "Back ID capture is not implemented yet. Please proceed with the next steps."
+      // );
+    });
+  document.getElementById("backToStep2").addEventListener("click", async () => {
+    await clearCamera();
+  });
+
+  if (nextToStep4) {
+    nextToStep4.addEventListener("click", async () => {
       try {
         await stopCamera();
         sloaderContent.textContent = "Loading camera";
@@ -240,15 +440,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       await stopCamera();
       // tryAgainBtn.classList.add("hidden")
       continueBtn.classList.add("hidden");
-      document.getElementById("nextToStep4").disabled = false;
+      document.getElementById("nextToStep5").disabled = false;
     });
   }
 
+  document.getElementById("backToStep3").addEventListener("click", async () => {
+    await clearCamera();
+  });
   // ===========================
   // INIT
   // ===========================
   try {
-    await loadModels(modelsLoaded);
+    await loadModels(modelsLoaded, sloaderContent,sloaderContent2, smainLoader);
   } catch (error) {
     console.log("Initialization error:", error);
   }

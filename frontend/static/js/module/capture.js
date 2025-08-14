@@ -12,7 +12,7 @@ export async function captureFace(
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.remove("hidden");
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     const ctx = canvas.getContext("2d");
     ctx.save();
@@ -31,17 +31,7 @@ export async function captureFace(
     const offsetX = (canvas.width - size) / 2;
     const offsetY = (canvas.height - size) / 2;
 
-    squareCtx.drawImage(
-      canvas,
-      offsetX,
-      offsetY,
-      size,
-      size,
-      0,
-      0,
-      size,
-      size
-    );
+    squareCtx.drawImage(canvas, offsetX, offsetY, size, size, 0, 0, size, size);
 
     const frozenFrame = document.createElement("img");
     frozenFrame.src = squareCanvas.toDataURL("image/png");
@@ -66,25 +56,32 @@ export async function captureFace(
             if (!response.ok) throw new Error("Upload failed");
 
             const data = await response.json();
+
             if (!data.face_validated) {
-              console.log("Face not detected.");
-              resolve(false);
-            } else {
-              capturedFace = data.image_url;
-              await setCapturedFace(capturedFace);
-              resolve(true);
+              throw new Error("Face not detected");
             }
-          } catch (error) {
-            console.error("Upload error:", error);
-            alert("Failed to upload image. Please try again.");
-            resolve(false);
-          } finally {
-            if (captureLoader) captureLoader.classList.add("hidden");
+
+            // success path
+            capturedFace = data.image_url;
+            await setCapturedFace(capturedFace);
+
             const loader = document.getElementById("successLoader");
             if (loader) {
               loader.classList.remove("hidden");
-              setTimeout(() => loader.classList.add("hidden"), 2000);
+              setTimeout(() => loader.classList.add("hidden"), 3000);
             }
+
+            resolve(true);
+          } catch (error) {
+            console.error("Upload error:", error);
+            const eloader = document.getElementById("errorLoader");
+            if (eloader) {
+              eloader.classList.remove("hidden");
+              setTimeout(() => eloader.classList.add("hidden"), 3000);
+            }
+            resolve(false);
+          } finally {
+            if (captureLoader) captureLoader.classList.add("hidden");
           }
         },
         "image/png",
@@ -101,22 +98,22 @@ export async function captureFace(
   }
 }
 
-
 export async function captureID(
-  isRetriID,
+  side, // "front" or "back"
+  // isRetriID,
   idCanvas,
   idVideo,
-  currentStep,
-  capturedFront,
-  capturedBack,
-  shouldFaceUser,
-  startIDCamera,
-  updateInstruction,
-  setStep,
-  setShouldFaceUser,
-  setCapturedFront,
-  setCapturedBack,
-  showFinalReview
+  // currentStep,
+  // capturedFront,
+  // capturedBack,
+  // shouldFaceUser,
+  startIDCamera
+  // updateInstruction,
+  // setStep,
+  // setShouldFaceUser,
+  // setCapturedFront,
+  // setCapturedBack,
+  // showFinalReview
 ) {
   try {
     const captureLoader = document.getElementById("captureLoader");
@@ -213,56 +210,56 @@ export async function captureID(
     }
     ctx.restore();
 
-    // High quality but not max to avoid huge files (0.95 quality)
-    const img = idCanvas.toDataURL("image/jpeg", 0.95);
-    const blob = await fetch(img).then((res) => res.blob());
-    const formData = new FormData();
-    formData.append("image", blob, `id_${currentStep}.jpg`);
-    formData.append("side", currentStep);
+    // High quality JPEG (but not huge)
+    const imgBase64 = idCanvas.toDataURL("image/jpeg", 0.95);
+    // .replace(/^data:image\/jpeg;base64,/, "");
 
-    const response = await fetch("/verify-id", {
+    const response = await fetch("/kyc/document", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: imgBase64,
+        side: side,
+      }),
     });
 
-    if (!response.ok) throw new Error("Verification failed");
     const verification = await response.json();
+    console.log("Verification response:", verification);
 
-    if (!verification.valid) {
+    if (!response.ok) {
+      throw new Error(verification.message || "Verification failed");
+    }
+
+    if (verification.status !== "success") {
       throw new Error(verification.message || "ID verification failed");
     }
 
-    if (currentStep === "idFront") {
-      setCapturedFront(verification.image_url);
-      document.getElementById("uploadedFilenameIdFront").value =
-        verification.filename;
-      if (!isRetriID) {
-        await setStep("idBack");
-        await startIDCamera();
-        await updateInstruction("Now capture the back side of your ID");
-      } else {
-        await showFinalReview();
-      }
+    if (side === "idFront") {
+      localStorage.setItem("frontUpload", imgBase64);
     } else {
-      setCapturedBack(verification.image_url);
-      document.getElementById("uploadedFilenameIdBack").value =
-        verification.filename;
-      await showFinalReview();
+      localStorage.setItem("backUpload", imgBase64);
     }
+    return true;
   } catch (error) {
-    console.error("ID capture error:", error);
-    alert(error.message || "Failed to capture ID image. Please try again.");
-    if (currentStep === "idFront") {
-      await setShouldFaceUser(true);
-      await startIDCamera();
+    console.log("ID capture error:", error);
+    const errorloader = document.getElementById("errorLoader");
+    errorloader.classList.remove("hidden");
+    // Hide automatically after 1.5s
+    setTimeout(() => errorloader.classList.add("hidden"), 3000);
+    if (side === "idFront") {
+      localStorage.setItem("frontUpload", "");
+    } else {
+      localStorage.setItem("backUpload", "");
     }
+    return false;
   } finally {
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.add("hidden");
-    const loader = document.getElementById("successLoader");
-    loader.classList.remove("hidden");
-    // Hide automatically after 1.5s
-    setTimeout(() => loader.classList.add("hidden"), 2000);
+
+    // const loader = document.getElementById("successLoader");
+    // loader.classList.remove("hidden");
+    // // Hide automatically after 1.5s
+    // setTimeout(() => loader.classList.add("hidden"), 2000);
   }
 }
 
