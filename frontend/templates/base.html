@@ -103,6 +103,44 @@
         animation: zoomOutCenter 0.5s ease-out forwards;
         transform-origin: center;
       }
+
+      /* Animation styles */
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Card styling */
+      .bg-gray-100 {
+        background-color: #f3f4f6;
+      }
+      .bg-gray-200 {
+        background-color: #e5e7eb;
+      }
+
+      /* Safe rotation container */
+      .w-\[320px\] {
+        width: 320px;
+      }
+      .h-\[320px\] {
+        height: 320px;
+      }
+
+      /* Face styling */
+      .bg-amber-50 { background-color: #fffbeb; }
+      .bg-amber-100 { background-color: #fef3c7; }
+      .bg-rose-100 { background-color: #ffe4e6; }
+      .bg-rose-200 { background-color: #fecdd3; }
+
     </style>
   </head>
 

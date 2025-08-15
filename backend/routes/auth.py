@@ -11,6 +11,7 @@ router = APIRouter()
 
 @router.get("/")
 async def unauthorized(request: Request):
+    print("This is the unauthorized route")
     token = request.cookies.get("auth_token")
     if token:
         try:
@@ -138,9 +139,9 @@ async def login(request: Request, token: str = Form(...)):
         error_response.delete_cookie("user_roles")
         return error_response
     
-from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
-import json
+# from fastapi import APIRouter, Request
+# from fastapi.responses import RedirectResponse
+# import json
 
 router = APIRouter()
 

@@ -8,3 +8,5 @@ google-cloud-firestore
 opencv-python
 pytesseract
 pycountry
+pillow
+numpy

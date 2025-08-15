@@ -100,20 +100,9 @@ export async function captureFace(
 
 export async function captureID(
   side, // "front" or "back"
-  // isRetriID,
   idCanvas,
   idVideo,
-  // currentStep,
-  // capturedFront,
-  // capturedBack,
-  // shouldFaceUser,
   startIDCamera
-  // updateInstruction,
-  // setStep,
-  // setShouldFaceUser,
-  // setCapturedFront,
-  // setCapturedBack,
-  // showFinalReview
 ) {
   try {
     const captureLoader = document.getElementById("captureLoader");
@@ -144,46 +133,25 @@ export async function captureID(
     // Apply optimized image enhancement
     const enhancedImage = await optimizeImageForOCR(processCanvas);
 
-    // Original scaling logic (unchanged)
-    const videoAspectRatio = videoWidth / videoHeight;
-    let drawWidth,
-      drawHeight,
-      offsetX = 0,
-      offsetY = 0;
-    const zoomFactor = isMobile ? 1.55 : 1.7;
-
-    if (isMobile) {
-      drawHeight = targetHeight;
-      drawWidth = targetHeight * videoAspectRatio;
-
-      if (drawWidth < targetWidth) {
-        offsetX = (targetWidth - drawWidth) / 2;
-        drawWidth = targetWidth;
-      }
-
-      drawWidth *= zoomFactor;
-      drawHeight *= zoomFactor;
-    } else {
-      const scale = Math.max(
-        targetWidth / videoWidth,
-        targetHeight / videoHeight
-      );
-      drawWidth = videoWidth * scale * zoomFactor;
-      drawHeight = videoHeight * scale * zoomFactor;
-      offsetX = (targetWidth - drawWidth) / 2;
-      offsetY = (targetHeight - drawHeight) / 2;
-    }
-
     // High-quality rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    ctx.fillStyle = "#f8f8f8"; // Slightly off-white background
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-    ctx.save();
+    const zoomFactor = isMobile ? 1.1 : 1.7;
+    let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
     if (isMobile) {
+      // For mobile (rotated) - ensure full coverage
+      const scale = Math.max(
+        targetWidth / videoHeight, // Note swapped dimensions for rotation
+        targetHeight / videoWidth
+      ) * zoomFactor;
+      drawWidth = videoWidth * scale;
+      drawHeight = videoHeight * scale;
+      
+      ctx.save();
       ctx.translate(targetWidth / 2, targetHeight / 2);
-      ctx.rotate(Math.PI / 2);
+      ctx.rotate(-Math.PI / 2);
       ctx.drawImage(
         enhancedImage,
         0,
@@ -195,7 +163,18 @@ export async function captureID(
         drawWidth,
         drawHeight
       );
+      ctx.restore();
     } else {
+      // For desktop - ensure full coverage
+      const scale = Math.max(
+        targetWidth / videoWidth,
+        targetHeight / videoHeight
+      ) * zoomFactor;
+      drawWidth = videoWidth * scale;
+      drawHeight = videoHeight * scale;
+      offsetX = (targetWidth - drawWidth) / 2;
+      offsetY = (targetHeight - drawHeight) / 2;
+      
       ctx.drawImage(
         enhancedImage,
         0,
@@ -208,11 +187,9 @@ export async function captureID(
         drawHeight
       );
     }
-    ctx.restore();
 
     // High quality JPEG (but not huge)
     const imgBase64 = idCanvas.toDataURL("image/jpeg", 0.95);
-    // .replace(/^data:image\/jpeg;base64,/, "");
 
     const response = await fetch("/kyc/document", {
       method: "POST",
@@ -244,7 +221,7 @@ export async function captureID(
     console.log("ID capture error:", error);
     const errorloader = document.getElementById("errorLoader");
     errorloader.classList.remove("hidden");
-    // Hide automatically after 1.5s
+    // Hide automatically after 3s
     setTimeout(() => errorloader.classList.add("hidden"), 3000);
     if (side === "idFront") {
       localStorage.setItem("frontUpload", "");
@@ -255,11 +232,6 @@ export async function captureID(
   } finally {
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.add("hidden");
-
-    // const loader = document.getElementById("successLoader");
-    // loader.classList.remove("hidden");
-    // // Hide automatically after 1.5s
-    // setTimeout(() => loader.classList.add("hidden"), 2000);
   }
 }
 

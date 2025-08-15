@@ -151,6 +151,7 @@ export async function startIDCamera(
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
+        // facingMode: { ideal: "user" }, // Try for back camera but fallback if unavailable
         facingMode: { exact: "environment" }, // Force back camera only
         width: { ideal: isMobile ? 720 : 1280 },
         height: { ideal: isMobile ? 1280 : 720 }, // Higher for portrait

@@ -6,7 +6,7 @@ import { showCameraError, hideCameraError } from "./module/error.js";
 import { captureFace, captureID } from "./module/capture.js";
 import { getCapturedFace, setCapturedFace } from "./module/state.js";
 import { delete_uploaded_face } from "./module/delete.js";
-
+import { showOrientationGuide } from "./module/animation.js";
 document.addEventListener("DOMContentLoaded", async () => {
   const cameraPage = document.getElementById("cameraPage");
   const video = document.getElementById("video");
@@ -50,6 +50,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const idBackCanvas = document.getElementById("idBackCanvas");
   const idBackOverlay = document.getElementById("idBackOverlay");
   const captureBackIdBtn = document.getElementById("captureIdBack");
+
+  const guide = document.getElementById("orientationGuide");
+  const sideText = document.getElementById("guideSideText");
+  const frontContent = document.getElementById("frontGuideContent");
+  const backContent = document.getElementById("backGuideContent");
 
   let shouldFaceUser = true;
   let stream = null;
@@ -118,6 +123,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (nextToStep2) {
     nextToStep2.addEventListener("click", async () => {
+      document.getElementById("orientationGuide").classList.remove("hidden");
+      await showOrientationGuide(
+        "front",
+        guide,
+        sideText,
+        frontContent,
+        backContent
+      );
       // alert("Please capture your ID before proceeding to the next step.");
       await stopCamera();
       await startIDCamera(
@@ -145,12 +158,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         stream,
         idVideo,
         idOverlay,
-        isMobile,
+        isMobile
         // await getShouldFaceUser(),
         // stopCamera
       );
-
-      
     });
 
   if (captureFrontIdBtn) {
@@ -173,15 +184,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           .classList.remove("hidden");
         document.getElementById("frontIdPreviewImage").src =
           localStorage.getItem("frontUpload");
+        document.getElementById("nextToStep3").disabled = false;
       } else {
         console.log("❌ Failed to capture ID front.");
       }
     });
   }
 
+  // Close handlers
+  // document.getElementById("closeGuideBtn").addEventListener("click", () => {
+  //   document.getElementById("orientationGuide").classList.add("hidden");
+  // });
+
+  document.getElementById("gotItBtn").addEventListener("click", () => {
+    document.getElementById("orientationGuide").classList.add("hidden");
+  });
+  // Call this when showing front/back capture:
+  // showOrientationGuide('front') or showOrientationGuide('back')
+
   document
     .getElementById("tryAgainFontId")
     .addEventListener("click", async () => {
+      document.getElementById("nextToStep3").disabled = true;
+
       // Reset the front ID preview
       document.getElementById("frontIdPreviewPage").classList.add("hidden");
       document.getElementById("frontIdPreviewImage").src = "";
@@ -226,6 +251,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===========================
   if (nextToStep3) {
     nextToStep3.addEventListener("click", async () => {
+      document.getElementById("orientationGuide").classList.remove("hidden");
+      await showOrientationGuide(
+        "back",
+        guide,
+        sideText,
+        frontContent,
+        backContent
+      );
       // alert("Please capture your ID before proceeding to the next step.");
       await stopCamera();
       await startIDCamera(
@@ -258,6 +291,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("backIdPreviewPage").classList.remove("hidden");
         document.getElementById("backIdPreviewImage").src =
           localStorage.getItem("backUpload");
+        document.getElementById("nextToStep4").disabled = false;
       } else {
         console.log("❌ Failed to capture ID Back.");
       }
@@ -266,6 +300,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("tryAgainBackId")
     .addEventListener("click", async () => {
+      document.getElementById("nextToStep4").disabled = true;
       // Reset the front ID preview
       document.getElementById("backIdPreviewPage").classList.add("hidden");
       document.getElementById("backIdPreviewImage").src = "";
@@ -303,15 +338,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     await clearCamera();
   });
 
+  function showFaceGuide() {
+    document.getElementById("faceGuide").classList.remove("hidden");
+  }
+  function hideFaceGuide() {
+    document.getElementById("faceGuide").classList.add("hidden");
+  }
+
+  document
+    .getElementById("startFaceCaptureBtn")
+    .addEventListener("click", hideFaceGuide);
+
   if (nextToStep4) {
     nextToStep4.addEventListener("click", async () => {
       try {
         await stopCamera();
-        sloaderContent.textContent = "Loading camera";
-        smainLoader.classList.remove("hidden");
-        setTimeout(() => {
-          smainLoader.classList.add("hidden");
-        }, 3000);
+        showFaceGuide();
+
+        // sloaderContent.textContent = "Loading camera";
+        // smainLoader.classList.remove("hidden");
+        // setTimeout(() => {
+        //   smainLoader.classList.add("hidden");
+        // }, 3000);
         // await loadModels(modelsLoaded);
         await setupCameraAndRunDetection(
           shouldFaceUser,
@@ -351,7 +399,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // const uploadedFilename =
       //   document.getElementById("uploadedFilename").value;
       // console.log(uploadedFilename);
-
+      document.getElementById("nextToStep5").disabled = true;
       const fullPath = localStorage.getItem("capturedFace");
       // const filename = fullPath.split("/").pop();
       // console.log(filename);
@@ -415,15 +463,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         previewPage.classList.remove("hidden");
         previewImage.src = await getCapturedFace();
         captureBtn.disabled = false;
-        continueBtn.classList.remove("hidden");
+        document.getElementById("nextToStep5").disabled = false;
+        // continueBtn.classList.remove("hidden");
       } else {
         console.log("❌ Failed to capture face.");
         // Optionally re-enable capture button for retry
         cameraPage.classList.add("hidden");
         previewPage.classList.remove("hidden");
-        continueBtn.classList.add("hidden");
+        // continueBtn.classList.add("hidden");
         previewImage.src = `https://static.vecteezy.com/system/resources/previews/017/178/222/original/round-cross-mark-symbol-with-transparent-background-free-png.png`;
-        captureBtn.disabled = false;
+        captureBtn.disabled = true;
+        document.getElementById("nextToStep5").disabled = true;
       }
 
       // ✅ Remove frozen frame after capture
@@ -451,7 +501,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // INIT
   // ===========================
   try {
-    await loadModels(modelsLoaded, sloaderContent,sloaderContent2, smainLoader);
+    await loadModels(
+      modelsLoaded,
+      sloaderContent,
+      sloaderContent2,
+      smainLoader
+    );
   } catch (error) {
     console.log("Initialization error:", error);
   }
