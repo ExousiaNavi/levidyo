@@ -234,6 +234,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await clearCamera();
   });
 
+  document.getElementById("backToStep1CameraError").addEventListener("click", async () => {
+    await clearCamera();
+    document.getElementById("orientationGuide").classList.add("hidden");
+  })
   document
     .getElementById("continueFrontId")
     .addEventListener("click", async (e) => {

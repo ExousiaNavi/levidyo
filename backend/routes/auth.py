@@ -143,7 +143,7 @@ async def login(request: Request, token: str = Form(...)):
 # from fastapi.responses import RedirectResponse
 # import json
 
-router = APIRouter()
+# router = APIRouter()
 
 @router.get("/logout")
 async def logout(request: Request):

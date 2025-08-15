@@ -273,6 +273,13 @@
       stepBars.step2.classList.replace("bg-green-500", "bg-gray-200");
     });
 
+    document.getElementById("backToStep1CameraError").addEventListener("click", async () => {
+      steps.two.classList.add("hidden");
+      steps.one.classList.remove("hidden");
+      stepBars.step2.classList.replace("bg-green-500", "bg-gray-200");
+      document.getElementById("cameraError").classList.add("hidden");
+    })
+
     // ---- STEP 3 ----
     const cameraPage = document.getElementById("cameraPage")
 
@@ -416,21 +423,21 @@
 
 
     // Restore from localStorage if exists
-    if (localStorage.getItem("country"))
-      country.value = localStorage.getItem("country");
-    if (localStorage.getItem("documentType"))
-      documentType.value = localStorage.getItem("documentType");
-    ["fullName", "birthdate", "address", "city", "postalCode"].forEach((id) => {
-      const val = localStorage.getItem(id);
-      if (val) document.getElementById(id).value = val;
-    });
+    //if (localStorage.getItem("country"))
+    //  country.value = localStorage.getItem("country");
+    //if (localStorage.getItem("documentType"))
+    //  documentType.value = localStorage.getItem("documentType");
+    //["fullName", "birthdate", "address", "city", "postalCode"].forEach((id) => {
+    //  const val = localStorage.getItem(id);
+    //  if (val) document.getElementById(id).value = val;
+    //});
 
-    if (localStorage.getItem("frontUpload"))
-      reviewFrontImg.src = localStorage.getItem("frontUpload");
-    if (localStorage.getItem("backUpload"))
-      reviewBackImg.src = localStorage.getItem("backUpload");
-    if (localStorage.getItem("selfieUpload"))
-      reviewSelfieImg.src = localStorage.getItem("capturedFace");
+    //if (localStorage.getItem("frontUpload"))
+    //  reviewFrontImg.src = localStorage.getItem("frontUpload");
+    //if (localStorage.getItem("backUpload"))
+    //  reviewBackImg.src = localStorage.getItem("backUpload");
+    //if (localStorage.getItem("selfieUpload"))
+    //  reviewSelfieImg.src = localStorage.getItem("capturedFace");
   });
 </script>
 
