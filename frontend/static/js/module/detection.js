@@ -68,8 +68,8 @@ export async function runDetection(
         const isUpright = eyeSlope < 8 && noseOffset < 12;
 
         const areaRatio = (width * height) / (overlay.width * overlay.height);
-        const isFaceBigEnough = areaRatio > 0.2 && areaRatio <= 0.32;
-        const isFaceTooClose = areaRatio > 0.32;
+        const isFaceBigEnough = areaRatio > 0.05 && areaRatio <= 0.12;
+        const isFaceTooClose = areaRatio > 0.22;
 
         if (isFaceBigEnough && isFaceCentered && isUpright) {
           color = "lime";

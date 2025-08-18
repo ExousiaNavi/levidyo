@@ -192,134 +192,144 @@ async def kyc_document(request: Request):
 def validate_id_centering_with_debug(base64_image, image_type, center_threshold=0.1, min_aspect_ratio=1.3, max_aspect_ratio=2.0):
     """Validate ID-like object centering and return result with debug image"""
     try:
-        # Clean the base64 string if it contains headers
-        if isinstance(base64_image, str):
-            if 'base64,' in base64_image:
-                base64_image = base64_image.split('base64,')[1]
-            base64_image = base64_image.strip()
+        # # Clean the base64 string if it contains headers
+        # if isinstance(base64_image, str):
+        #     if 'base64,' in base64_image:
+        #         base64_image = base64_image.split('base64,')[1]
+        #     base64_image = base64_image.strip()
             
-            if not base64_image:
-                raise ValueError("Empty base64 string provided")
+        #     if not base64_image:
+        #         raise ValueError("Empty base64 string provided")
             
-            # Ensure proper padding
-            padding = len(base64_image) % 4
-            if padding:
-                base64_image += '=' * (4 - padding)
+        #     # Ensure proper padding
+        #     padding = len(base64_image) % 4
+        #     if padding:
+        #         base64_image += '=' * (4 - padding)
         
-        # Decode image
-        image_data = base64.b64decode(base64_image)
-        nparr = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # # Decode image
+        # image_data = base64.b64decode(base64_image)
+        # nparr = np.frombuffer(image_data, np.uint8)
+        # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        if img is None:
-            raise ValueError("Failed to decode image - possibly invalid or corrupted image data")
+        # if img is None:
+        #     raise ValueError("Failed to decode image - possibly invalid or corrupted image data")
         
-        debug_img = img.copy()
-        height, width = img.shape[:2]
-        image_center = (width/2, height/2)
+        # debug_img = img.copy()
+        # height, width = img.shape[:2]
+        # image_center = (width/2, height/2)
         
-        # Process image
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-         # Process image with different approach
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # # Process image
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        #  # Process image with different approach
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Use adaptive thresholding instead of global threshold
-        thresh = cv2.adaptiveThreshold(gray, 255, 
-                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                     cv2.THRESH_BINARY_INV, 11, 2)
+        # # Use adaptive thresholding instead of global threshold
+        # thresh = cv2.adaptiveThreshold(gray, 255, 
+        #                              cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        #                              cv2.THRESH_BINARY_INV, 11, 2)
         
-        # Add morphological operations to enhance ID features
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-        morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-        morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
+        # # Add morphological operations to enhance ID features
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+        # morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        # morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
         
-        # Find contours with hierarchy to better detect document structure
-        contours, hierarchy = cv2.findContours(morph, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # # Find contours with hierarchy to better detect document structure
+        # contours, hierarchy = cv2.findContours(morph, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
-        if not contours:
-            raise ValueError("No objects detected in image")
+        # if not contours:
+        #     raise ValueError("No objects detected in image")
         
-        # Filter contours to find ID-like objects (rectangular with proper aspect ratio)
-        document_contours = []
-        for i, contour in enumerate(contours):
-            # Check if this contour has children (indicating potential document with internal features)
-            if hierarchy[0][i][2] != -1:  # Has child contours
-                x, y, w, h = cv2.boundingRect(contour)
-                aspect_ratio = float(w)/h
+        # # Filter contours to find ID-like objects (rectangular with proper aspect ratio)
+        # document_contours = []
+        # for i, contour in enumerate(contours):
+        #     # Check if this contour has children (indicating potential document with internal features)
+        #     if hierarchy[0][i][2] != -1:  # Has child contours
+        #         x, y, w, h = cv2.boundingRect(contour)
+        #         aspect_ratio = float(w)/h
                 
-                # Less strict size requirements but still reasonable
-                if (min_aspect_ratio <= aspect_ratio <= max_aspect_ratio and
-                    w > width/4 and h > height/4):  # At least 25% of image dimensions
-                    document_contours.append(contour)
+        #         # Less strict size requirements but still reasonable
+        #         if (min_aspect_ratio <= aspect_ratio <= max_aspect_ratio and
+        #             w > width/4 and h > height/4):  # At least 25% of image dimensions
+        #             document_contours.append(contour)
         
-        # If no document contours found, try alternative approach
-        if not document_contours:
-            # Find all large enough contours
-            large_contours = []
-            for contour in contours:
-                x, y, w, h = cv2.boundingRect(contour)
-                if w > width/3 and h > height/3:
-                    large_contours.append(contour)
+        # # If no document contours found, try alternative approach
+        # if not document_contours:
+        #     # Find all large enough contours
+        #     large_contours = []
+        #     for contour in contours:
+        #         x, y, w, h = cv2.boundingRect(contour)
+        #         if w > width/3 and h > height/3:
+        #             large_contours.append(contour)
             
-            # If exactly one large contour found, use it
-            if len(large_contours) == 1:
-                document_contours = large_contours
+        #     # If exactly one large contour found, use it
+        #     if len(large_contours) == 1:
+        #         document_contours = large_contours
 
-        if not document_contours:
-            raise ValueError("No ID-like objects detected (wrong aspect ratio)")
+        # if not document_contours:
+        #     raise ValueError("No ID-like objects detected (wrong aspect ratio)")
         
-        # Get largest ID-like contour
-        largest_contour = max(document_contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(largest_contour)
-        # Final validation
-        if (w * h) < (width * height * 0.1):  # Less than 10% of image area
-            raise ValueError("Detected object is too small")
+        # # Get largest ID-like contour
+        # largest_contour = max(document_contours, key=cv2.contourArea)
+        # x, y, w, h = cv2.boundingRect(largest_contour)
+        # # Final validation
+        # if (w * h) < (width * height * 0.1):  # Less than 10% of image area
+        #     raise ValueError("Detected object is too small")
         
-        object_center = (x + w/2, y + h/2)
+        # object_center = (x + w/2, y + h/2)
         
-        # Calculate deviation
-        x_deviation = abs(object_center[0] - image_center[0]) / width
-        y_deviation = abs(object_center[1] - image_center[1]) / height
-        max_deviation = max(x_deviation, y_deviation)
+        # # Calculate deviation
+        # x_deviation = abs(object_center[0] - image_center[0]) / width
+        # y_deviation = abs(object_center[1] - image_center[1]) / height
+        # max_deviation = max(x_deviation, y_deviation)
         
-        # Draw visualization elements
-        cv2.rectangle(debug_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.circle(debug_img, (int(object_center[0]), int(object_center[1])), 5, (255, 0, 0), -1)
-        cv2.circle(debug_img, (int(image_center[0]), int(image_center[1])), 5, (0, 0, 255), -1)
+        # # Draw visualization elements
+        # cv2.rectangle(debug_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        # cv2.circle(debug_img, (int(object_center[0]), int(object_center[1])), 5, (255, 0, 0), -1)
+        # cv2.circle(debug_img, (int(image_center[0]), int(image_center[1])), 5, (0, 0, 255), -1)
         
-        # Add text annotations
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(debug_img, f"X Dev: {x_deviation:.2f}", (10, 30), font, 0.7, (255, 255, 255), 2)
-        cv2.putText(debug_img, f"Y Dev: {y_deviation:.2f}", (10, 60), font, 0.7, (255, 255, 255), 2)
-        cv2.putText(debug_img, f"Max Dev: {max_deviation:.2f}", (10, 90), font, 0.7, (255, 255, 255), 2)
+        # # Add text annotations
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        # cv2.putText(debug_img, f"X Dev: {x_deviation:.2f}", (10, 30), font, 0.7, (255, 255, 255), 2)
+        # cv2.putText(debug_img, f"Y Dev: {y_deviation:.2f}", (10, 60), font, 0.7, (255, 255, 255), 2)
+        # cv2.putText(debug_img, f"Max Dev: {max_deviation:.2f}", (10, 90), font, 0.7, (255, 255, 255), 2)
         
-        is_centered = max_deviation <= center_threshold
-        status = "CENTERED" if is_centered else "NOT CENTERED"
-        color = (0, 255, 0) if is_centered else (0, 0, 255)
-        cv2.putText(debug_img, status, (width-200, 30), font, 0.7, color, 2)
+        # is_centered = max_deviation <= center_threshold
+        # status = "CENTERED" if is_centered else "NOT CENTERED"
+        # color = (0, 255, 0) if is_centered else (0, 0, 255)
+        # cv2.putText(debug_img, status, (width-200, 30), font, 0.7, color, 2)
         
-        # Enhanced debug visualization
-        cv2.drawContours(debug_img, document_contours, -1, (0,255,255), 2)  # All potential docs in yellow
-        cv2.rectangle(debug_img, (x,y), (x+w,y+h), (0,255,0), 3)  # Selected doc in green
+        # # Enhanced debug visualization
+        # cv2.drawContours(debug_img, document_contours, -1, (0,255,255), 2)  # All potential docs in yellow
+        # cv2.rectangle(debug_img, (x,y), (x+w,y+h), (0,255,0), 3)  # Selected doc in green
+
+        # return {
+        #     "is_centered": is_centered,
+        #     "max_deviation": float(max_deviation),
+        #     "threshold": float(center_threshold),
+        #     "object_center": {"x": float(object_center[0]), "y": float(object_center[1])},
+        #     "image_center": {"x": float(image_center[0]), "y": float(image_center[1])},
+        #     "bounding_box": {"x": x, "y": y, "width": w, "height": h},
+        #     "object_type": "ID-like"  # Indicate we found an ID-like object
+        # }, debug_img
 
         return {
-            "is_centered": is_centered,
-            "max_deviation": float(max_deviation),
-            "threshold": float(center_threshold),
-            "object_center": {"x": float(object_center[0]), "y": float(object_center[1])},
-            "image_center": {"x": float(image_center[0]), "y": float(image_center[1])},
-            "bounding_box": {"x": x, "y": y, "width": w, "height": h},
-            "object_type": "ID-like"  # Indicate we found an ID-like object
-        }, debug_img
+            "is_centered": True,
+            "max_deviation": 0.0,
+            "threshold": 0.0,
+            "object_center": {"x": 0.0, "y": 0.0},
+            "image_center": {"x": 0.0, "y": 0.0},
+            "bounding_box": {"x": 0, "y": 0, "width": 0, "height": 0},
+            "object_type": "No Validation for this version."  # Indicate we found an ID-like object
+        }, "no debug image for this version"
         
     except Exception as e:
-        error_img = np.zeros((300, 500, 3), dtype=np.uint8)
-        cv2.putText(error_img, f"Error processing {image_type}:", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        cv2.putText(error_img, str(e), (10, 70), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        # error_img = np.zeros((300, 500, 3), dtype=np.uint8)
+        # cv2.putText(error_img, f"Error processing {image_type}:", (10, 30), 
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        # cv2.putText(error_img, str(e), (10, 70), 
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
         
         return {
             "is_centered": False,
             "error": str(e)
-        }, error_img
+        }, "no debug image for this version"

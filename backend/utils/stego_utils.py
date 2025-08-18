@@ -80,7 +80,7 @@ def encode_image(input_path: str, output_path: str, secret_text: str,
         x, y, fw, fh = main_face
         
         # Calculate dynamic vertical position
-        margin = int(fh * 0.30)  # 30% of face height as margin
+        margin = int(fh * 0.70)  # 30% of face height as margin
         y_wm = y + fh + margin
         
         # Horizontal positioning - center relative to face with bounds checking

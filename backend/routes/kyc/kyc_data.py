@@ -1,6 +1,6 @@
 import pycountry
 
-default_docs = ["Passport", "Driver's License", "Other ID"]
+default_docs = ["National ID","Passport", "Driver's License", "Other ID"]
 
 # ✅ Define only 5 allowed countries (ISO Alpha-2 codes)
 ALLOWED_COUNTRIES = ["BD", "IN", "PK", "NP"]
