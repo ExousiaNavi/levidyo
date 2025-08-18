@@ -3,6 +3,8 @@ let validFaceTimer = null;
 let holdStillStartTime = null;
 let isCapturing = false;
 let lastCaptureTime = 0;
+let lastValidPositionTime = 0;
+let gracePeriodActive = false;
 
 export async function runDetection(
   detectionInterval,
@@ -19,7 +21,7 @@ export async function runDetection(
 
   detectionInterval = setInterval(async () => {
     try {
-      // Frame dimensions
+      // Frame dimensions (unchanged)
       const oblongHeight = isMobile ? overlay.height * 0.75 : overlay.height * 0.7;
       const oblongWidth = isMobile ? overlay.width * 0.7 : overlay.width * 0.7;
       const oblongX = (overlay.width - oblongWidth) / 2;
@@ -27,7 +29,7 @@ export async function runDetection(
 
       // Default state
       let color = "red";
-      let message = "Align your face properly";
+      let message = "Position your face in the frame";
 
       const result = await faceapi.detectSingleFace(video, options).withFaceLandmarks();
 
@@ -37,91 +39,118 @@ export async function runDetection(
         const faceCenterY = y + height / 2;
         const landmarks = result.landmarks;
 
-        // Orientation checks
+        // Orientation checks with buffer
         const leftEye = landmarks.getLeftEye();
         const rightEye = landmarks.getRightEye();
         const nose = landmarks.getNose();
         const eyeSlope = Math.abs(leftEye[0].y - rightEye[3].y);
         const noseOffset = Math.abs((leftEye[0].x + rightEye[3].x) / 2 - nose[3].x);
 
-        // Detection parameters
-        const isHorizontallyCentered = faceCenterX >= oblongX + oblongWidth * 0.4 &&
-                                      faceCenterX <= oblongX + oblongWidth * 0.6;
-        const isTopPositioned = y >= oblongY && y <= oblongY + oblongHeight * 0.45;
-        const isBottomClear = y + height <= oblongY + oblongHeight * 0.8;
-        const isFaceCentered = isHorizontallyCentered && isTopPositioned && isBottomClear;
-        const isUpright = eyeSlope < 8 && noseOffset < 14;
-
-        // Size detection
+        // Size detection with buffer
         const areaRatio = (width * height) / (overlay.width * overlay.height);
-        const isFaceBigEnough = areaRatio > 0.07 && areaRatio <= 0.16;
-        const isFaceTooClose = areaRatio > 0.18;
+        const isFaceBigEnough = areaRatio > 0.06 && areaRatio <= 0.17;
+        const isFaceTooClose = areaRatio > 0.19;
 
-        // Decision logic
-        if (isFaceBigEnough && isFaceCentered && isUpright) {
+        // Position checks with 10% buffer
+        const isHorizontallyCentered = 
+          faceCenterX >= oblongX + oblongWidth * 0.35 && 
+          faceCenterX <= oblongX + oblongWidth * 0.65;
+
+        const isTopPositioned =
+          y >= oblongY - oblongHeight * 0.1 && 
+          y <= oblongY + oblongHeight * 0.5;
+
+        const isBottomClear = y + height <= oblongY + oblongHeight * 0.85;
+
+        // Angle checks with 50% more tolerance
+        const isUpright = eyeSlope < 12 && noseOffset < 18;
+
+        // Current time for grace period calculation
+        const now = Date.now();
+
+        // Check if all conditions are met (with buffers)
+        const isPerfectPosition = isFaceBigEnough && 
+                                faceCenterX >= oblongX + oblongWidth * 0.4 &&
+                                faceCenterX <= oblongX + oblongWidth * 0.6 &&
+                                y >= oblongY && 
+                                y <= oblongY + oblongHeight * 0.45 &&
+                                y + height <= oblongY + oblongHeight * 0.8 &&
+                                eyeSlope < 8 && 
+                                noseOffset < 14;
+
+        // Check if within buffer zones
+        const isWithinBufferZones = isFaceBigEnough && 
+                                   isHorizontallyCentered && 
+                                   isTopPositioned && 
+                                   isBottomClear && 
+                                   isUpright;
+
+        // Grace period logic (500ms)
+        if (isPerfectPosition) {
+          lastValidPositionTime = now;
+          gracePeriodActive = false;
           color = "lime";
-          
-          // Start timer if not already running and not recently captured
-          const now = Date.now();
-          if (!validFaceTimer && now - lastCaptureTime > 5000) {
-            holdStillStartTime = now;
-            validFaceTimer = setTimeout(() => {
-              if (!isCapturing) {
-                isCapturing = true;
-                document.getElementById("capture").click();
-                lastCaptureTime = Date.now();
-                setTimeout(() => {
-                  isCapturing = false;
-                  validFaceTimer = null;
-                }, 3000); // Cooldown period
-              }
-            }, 5000);
-          }
-
-          // Update countdown message
-          if (validFaceTimer) {
-            const elapsed = Date.now() - holdStillStartTime;
-            const remaining = Math.max(0, 3 - Math.floor(elapsed / 1000));
-            message = `✅ Hold still for ${remaining}s...`;
-            
-            // Update progress bar if exists
-            if (document.getElementById("countdown-bar")) {
-              const progress = Math.min(100, (elapsed / 5000) * 100);
-              document.getElementById("countdown-bar").style.width = `${progress}%`;
-            }
-          }
-        } else {
-          // Reset timer if conditions aren't met
-          if (validFaceTimer) {
-            clearTimeout(validFaceTimer);
-            validFaceTimer = null;
-            if (document.getElementById("countdown-bar")) {
-              document.getElementById("countdown-bar").style.width = "0%";
-            }
-          }
+          message = "✅ Perfect! Hold still";
+        } 
+        else if (isWithinBufferZones && (now - lastValidPositionTime < 500 || gracePeriodActive)) {
+          gracePeriodActive = true;
+          color = "orange";
+          message = "🟡 Keep holding...";
+        } 
+        else {
+          gracePeriodActive = false;
+          color = "red";
           
           // Position feedback messages
           if (isFaceTooClose) {
-            message = "📏 Move slightly back";
+            message = "📏 Move back slightly";
           } else if (!isFaceBigEnough) {
-            message = "📷 Move closer";
+            message = "📷 Move a bit closer";
           } else if (!isHorizontallyCentered) {
-            message = "↔️ Center horizontally";
+            message = "↔️ Adjust left or right";
           } else if (!isTopPositioned) {
-            message = "⬇️ Move face to top";
+            message = "⬇️ Move down slightly";
           } else if (!isBottomClear) {
-            message = "⬆️ Keep space below face";
+            message = "⬆️ Move up slightly";
           } else if (!isUpright) {
-            message = "↕️ Keep head straight";
+            message = "↕️ Straighten your head";
           }
         }
 
-        // Update debug info
-        if (document.querySelector("#face_position_debug")) {
-          document.querySelector("#face_position_debug").innerHTML = `
-            X: ${faceCenterX.toFixed(0)} (${(oblongX + oblongWidth * 0.4).toFixed(0)}-${(oblongX + oblongWidth * 0.6).toFixed(0)}),
-            Y: ${y.toFixed(0)} (${oblongY.toFixed(0)}-${(oblongY + oblongHeight * 0.35).toFixed(0)})
-          `;
+        // Timer logic for perfect position
+        if (isPerfectPosition && !validFaceTimer && now - lastCaptureTime > 5000) {
+          holdStillStartTime = now;
+          validFaceTimer = setTimeout(() => {
+            if (!isCapturing) {
+              isCapturing = true;
+              document.getElementById("capture").click();
+              lastCaptureTime = now;
+              setTimeout(() => {
+                isCapturing = false;
+                validFaceTimer = null;
+              }, 3000);
+            }
+          }, 5000);
+        }
+
+        // Reset timer if not in perfect position (without grace period)
+        if (!isPerfectPosition && !gracePeriodActive && validFaceTimer) {
+          clearTimeout(validFaceTimer);
+          validFaceTimer = null;
+        }
+
+        // Update countdown UI
+        if (validFaceTimer) {
+          const elapsed = now - holdStillStartTime;
+          const remaining = Math.max(0, 5 - Math.floor(elapsed / 1000));
+          message = `✅ Auto-capturing in ${remaining}s...`;
+          
+          if (document.getElementById("countdown-bar")) {
+            const progress = Math.min(100, (elapsed / 5000) * 100);
+            document.getElementById("countdown-bar").style.width = `${progress}%`;
+          }
+        } else if (document.getElementById("countdown-bar")) {
+          document.getElementById("countdown-bar").style.width = "0%";
         }
       }
 
@@ -135,12 +164,12 @@ export async function runDetection(
       }
       if (statusText) statusText.textContent = message;
 
-      // Visual feedback
+      // Visual feedback (unchanged)
       ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
       ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.67)";
       ctxOverlay.fillRect(0, 0, overlay.width, overlay.height);
 
-      // Draw oval
+      // Draw oval (unchanged)
       ctxOverlay.save();
       ctxOverlay.globalCompositeOperation = "destination-out";
       ctxOverlay.beginPath();
@@ -156,7 +185,7 @@ export async function runDetection(
       ctxOverlay.fill();
       ctxOverlay.restore();
 
-      // Draw border
+      // Draw border (unchanged)
       ctxOverlay.save();
       ctxOverlay.beginPath();
       ctxOverlay.ellipse(
