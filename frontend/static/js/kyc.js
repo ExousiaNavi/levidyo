@@ -403,6 +403,35 @@ document.addEventListener("DOMContentLoaded", async () => {
       // const uploadedFilename =
       //   document.getElementById("uploadedFilename").value;
       // console.log(uploadedFilename);
+      await setupCameraAndRunDetection(
+          shouldFaceUser,
+          stream,
+          video,
+          overlay,
+          canvas,
+          () =>
+            showCameraLoading(cameraLoading, () =>
+              hideCameraError(cameraLoading)
+            ), // wrapped with params,
+          () => hideCameraLoading(cameraLoading), // wrapped with params,
+          () => stopCamera(),
+          () =>
+            runDetection(
+              detectionInterval,
+              isMobile,
+              overlay,
+              video,
+              captureBtn,
+              statusText,
+              ctxOverlay,
+              loaderHidden
+              // loader,
+              // con
+            ),
+          cameraError,
+          showCameraError
+        );
+        
       document.getElementById("nextToStep5").disabled = true;
       const fullPath = localStorage.getItem("capturedFace");
       // const filename = fullPath.split("/").pop();
@@ -463,6 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (success) {
         console.log("✅ Face captured successfully:", await getCapturedFace());
         await stopCamera();
+        await stopCameraForced(video)
         cameraPage.classList.add("hidden");
         previewPage.classList.remove("hidden");
         previewImage.src = await getCapturedFace();
