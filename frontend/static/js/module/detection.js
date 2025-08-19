@@ -6,6 +6,16 @@ let lastCaptureTime = 0;
 let lastValidPositionTime = 0;
 let gracePeriodActive = false;
 
+// New: angle smoothing history
+let eyeSlopeHistory = [];
+let noseOffsetHistory = [];
+
+function smoothValue(history, value, maxLen = 5) {
+  history.push(value);
+  if (history.length > maxLen) history.shift();
+  return history.reduce((a, b) => a + b, 0) / history.length;
+}
+
 export async function runDetection(
   detectionInterval,
   isMobile,
@@ -21,7 +31,7 @@ export async function runDetection(
 
   detectionInterval = setInterval(async () => {
     try {
-      // Frame dimensions (unchanged)
+      // Frame dimensions
       const oblongHeight = isMobile ? overlay.height * 0.75 : overlay.height * 0.7;
       const oblongWidth = isMobile ? overlay.width * 0.7 : overlay.width * 0.7;
       const oblongX = (overlay.width - oblongWidth) / 2;
@@ -39,51 +49,55 @@ export async function runDetection(
         const faceCenterY = y + height / 2;
         const landmarks = result.landmarks;
 
-        // Orientation checks with buffer
+        // Orientation checks
         const leftEye = landmarks.getLeftEye();
         const rightEye = landmarks.getRightEye();
         const nose = landmarks.getNose();
-        const eyeSlope = Math.abs(leftEye[0].y - rightEye[3].y);
-        const noseOffset = Math.abs((leftEye[0].x + rightEye[3].x) / 2 - nose[3].x);
+        const rawEyeSlope = Math.abs(leftEye[0].y - rightEye[3].y);
+        const rawNoseOffset = Math.abs((leftEye[0].x + rightEye[3].x) / 2 - nose[3].x);
 
-        // Size detection with buffer
+        // Smooth values
+        const eyeSlope = smoothValue(eyeSlopeHistory, rawEyeSlope);
+        const noseOffset = smoothValue(noseOffsetHistory, rawNoseOffset);
+
+        // Size detection
         const areaRatio = (width * height) / (overlay.width * overlay.height);
-        const isFaceBigEnough = areaRatio > 0.06 && areaRatio <= 0.17;
+        const isFaceBigEnough = areaRatio > 0.06 && areaRatio <= 0.18;
         const isFaceTooClose = areaRatio > 0.19;
 
-        // Position checks with 10% buffer
-        const isHorizontallyCentered = 
-          faceCenterX >= oblongX + oblongWidth * 0.35 && 
+        // Position checks
+        const isHorizontallyCentered =
+          faceCenterX >= oblongX + oblongWidth * 0.35 &&
           faceCenterX <= oblongX + oblongWidth * 0.65;
 
         const isTopPositioned =
-          y >= oblongY - oblongHeight * 0.1 && 
+          y >= oblongY - oblongHeight * 0.1 &&
           y <= oblongY + oblongHeight * 0.5;
 
         const isBottomClear = y + height <= oblongY + oblongHeight * 0.85;
 
-        // Angle checks with 50% more tolerance
-        const isUpright = eyeSlope < 12 && noseOffset < 18;
+        // Angle checks with more tolerance
+        const isUpright = eyeSlope < 15 && noseOffset < 22;
 
-        // Current time for grace period calculation
+        // Current time
         const now = Date.now();
 
-        // Check if all conditions are met (with buffers)
-        const isPerfectPosition = isFaceBigEnough && 
-                                faceCenterX >= oblongX + oblongWidth * 0.4 &&
-                                faceCenterX <= oblongX + oblongWidth * 0.6 &&
-                                y >= oblongY && 
-                                y <= oblongY + oblongHeight * 0.45 &&
-                                y + height <= oblongY + oblongHeight * 0.8 &&
-                                eyeSlope < 8 && 
-                                noseOffset < 14;
+        // Perfect position
+        const isPerfectPosition = isFaceBigEnough &&
+          faceCenterX >= oblongX + oblongWidth * 0.4 &&
+          faceCenterX <= oblongX + oblongWidth * 0.6 &&
+          y >= oblongY &&
+          y <= oblongY + oblongHeight * 0.45 &&
+          y + height <= oblongY + oblongHeight * 0.8 &&
+          eyeSlope < 12 &&
+          noseOffset < 18;
 
-        // Check if within buffer zones
-        const isWithinBufferZones = isFaceBigEnough && 
-                                   isHorizontallyCentered && 
-                                   isTopPositioned && 
-                                   isBottomClear && 
-                                   isUpright;
+        // Buffer zone
+        const isWithinBufferZones = isFaceBigEnough &&
+          isHorizontallyCentered &&
+          isTopPositioned &&
+          isBottomClear &&
+          isUpright;
 
         // Grace period logic (500ms)
         if (isPerfectPosition) {
@@ -91,17 +105,15 @@ export async function runDetection(
           gracePeriodActive = false;
           color = "lime";
           message = "✅ Perfect! Hold still";
-        } 
-        else if (isWithinBufferZones && (now - lastValidPositionTime < 500 || gracePeriodActive)) {
+        } else if (isWithinBufferZones && (now - lastValidPositionTime < 800 || gracePeriodActive)) {
           gracePeriodActive = true;
           color = "orange";
           message = "🟡 Keep holding...";
-        } 
-        else {
+        } else {
           gracePeriodActive = false;
           color = "red";
-          
-          // Position feedback messages
+
+          // Feedback messages
           if (isFaceTooClose) {
             message = "📏 Move back slightly";
           } else if (!isFaceBigEnough) {
@@ -117,7 +129,7 @@ export async function runDetection(
           }
         }
 
-        // Timer logic for perfect position
+        // Timer for auto capture
         if (isPerfectPosition && !validFaceTimer && now - lastCaptureTime > 5000) {
           holdStillStartTime = now;
           validFaceTimer = setTimeout(() => {
@@ -133,18 +145,18 @@ export async function runDetection(
           }, 5000);
         }
 
-        // Reset timer if not in perfect position (without grace period)
+        // Reset timer
         if (!isPerfectPosition && !gracePeriodActive && validFaceTimer) {
           clearTimeout(validFaceTimer);
           validFaceTimer = null;
         }
 
-        // Update countdown UI
+        // Countdown UI
         if (validFaceTimer) {
           const elapsed = now - holdStillStartTime;
           const remaining = Math.max(0, 5 - Math.floor(elapsed / 1000));
           message = `✅ Auto-capturing in ${remaining}s...`;
-          
+
           if (document.getElementById("countdown-bar")) {
             const progress = Math.min(100, (elapsed / 5000) * 100);
             document.getElementById("countdown-bar").style.width = `${progress}%`;
@@ -164,12 +176,12 @@ export async function runDetection(
       }
       if (statusText) statusText.textContent = message;
 
-      // Visual feedback (unchanged)
+      // Visual feedback
       ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
       ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.67)";
       ctxOverlay.fillRect(0, 0, overlay.width, overlay.height);
 
-      // Draw oval (unchanged)
+      // Draw oval
       ctxOverlay.save();
       ctxOverlay.globalCompositeOperation = "destination-out";
       ctxOverlay.beginPath();
@@ -185,7 +197,7 @@ export async function runDetection(
       ctxOverlay.fill();
       ctxOverlay.restore();
 
-      // Draw border (unchanged)
+      // Draw border
       ctxOverlay.save();
       ctxOverlay.beginPath();
       ctxOverlay.ellipse(
