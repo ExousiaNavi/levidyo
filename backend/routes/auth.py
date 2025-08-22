@@ -13,6 +13,12 @@ router = APIRouter()
 async def unauthorized(request: Request):
     print("This is the unauthorized route")
     token = request.cookies.get("auth_token")
+    # Safely access 'us_player' (assuming you meant 'is_player'?)
+    # us_player = token.get('roles', {}).get('us_player', False)  # Default to False if not found
+    # print("This is thge unauthorized route")
+    # print("==========================================")
+    # print(us_player)
+    # print("==========================================")
     if token:
         try:
             firebase_auth.verify_id_token(token)  # ⬅️ actually verify the token

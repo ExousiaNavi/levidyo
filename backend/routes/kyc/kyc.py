@@ -117,9 +117,10 @@ def detect_card_with_box(image_path, template_path="card_template.png"):
 @router.get("/kyc")
 async def kyc_page(request: Request):
         user = check_auth_kyc(request)
-        print("=====================================================")
-        print(user)
-        print("=====================================================")
+        # us_player = user.get('roles', {}).get('is_player', False)  # Default to False if not found
+        # print("=====================================================")
+        # print(us_player)
+        # print("=====================================================")
         
         if not user:
             print("No session → show auth page")
@@ -132,7 +133,7 @@ async def kyc_page(request: Request):
 
         else:
             # ✅ Redirect authenticated users to dashboard
-            return RedirectResponse(url="/kyc/dashboard", status_code=303)
+            return RedirectResponse(url="/kyc/identification", status_code=303)
 
 
         # COMMENTED FOR NOW NOT NEEDED

@@ -5,12 +5,15 @@ let isCapturing = false;
 let lastCaptureTime = 0;
 let lastValidPositionTime = 0;
 let gracePeriodActive = false;
+let lastFaceCenterX = null;
+let lastFaceCenterY = null;
 
-// New: angle smoothing history
+// Angle smoothing history
 let eyeSlopeHistory = [];
 let noseOffsetHistory = [];
 
-function smoothValue(history, value, maxLen = 5) {
+// Smoothing function (moving average)
+function smoothValue(history, value, maxLen = 8) { // increased from 5 to 8
   history.push(value);
   if (history.length > maxLen) history.shift();
   return history.reduce((a, b) => a + b, 0) / history.length;
@@ -37,7 +40,6 @@ export async function runDetection(
       const oblongX = (overlay.width - oblongWidth) / 2;
       const oblongY = (overlay.height - oblongHeight) / 2 - 90;
 
-      // Default state
       let color = "red";
       let message = "Position your face in the frame";
 
@@ -57,8 +59,8 @@ export async function runDetection(
         const rawNoseOffset = Math.abs((leftEye[0].x + rightEye[3].x) / 2 - nose[3].x);
 
         // Smooth values
-        const eyeSlope = smoothValue(eyeSlopeHistory, rawEyeSlope);
-        const noseOffset = smoothValue(noseOffsetHistory, rawNoseOffset);
+        const eyeSlope = smoothValue(eyeSlopeHistory, rawEyeSlope, 8);
+        const noseOffset = smoothValue(noseOffsetHistory, rawNoseOffset, 8);
 
         // Size detection
         const areaRatio = (width * height) / (overlay.width * overlay.height);
@@ -69,28 +71,37 @@ export async function runDetection(
         const isHorizontallyCentered =
           faceCenterX >= oblongX + oblongWidth * 0.35 &&
           faceCenterX <= oblongX + oblongWidth * 0.65;
-
         const isTopPositioned =
           y >= oblongY - oblongHeight * 0.1 &&
           y <= oblongY + oblongHeight * 0.5;
-
         const isBottomClear = y + height <= oblongY + oblongHeight * 0.85;
 
-        // Angle checks with more tolerance
-        const isUpright = eyeSlope < 15 && noseOffset < 22;
+        // Angle checks (looser tolerance)
+        const isUpright = eyeSlope < 20 && noseOffset < 30;
 
-        // Current time
+        // Motion buffer (allow small wiggle)
+        const wiggleThreshold = 15; // pixels
+        if (lastFaceCenterX !== null && lastFaceCenterY !== null) {
+          const dx = Math.abs(faceCenterX - lastFaceCenterX);
+          const dy = Math.abs(faceCenterY - lastFaceCenterY);
+          if (dx < wiggleThreshold && dy < wiggleThreshold) {
+            lastValidPositionTime = Date.now();
+          }
+        }
+        lastFaceCenterX = faceCenterX;
+        lastFaceCenterY = faceCenterY;
+
         const now = Date.now();
 
-        // Perfect position
+        // Perfect position (slightly looser)
         const isPerfectPosition = isFaceBigEnough &&
           faceCenterX >= oblongX + oblongWidth * 0.4 &&
           faceCenterX <= oblongX + oblongWidth * 0.6 &&
           y >= oblongY &&
           y <= oblongY + oblongHeight * 0.45 &&
           y + height <= oblongY + oblongHeight * 0.8 &&
-          eyeSlope < 12 &&
-          noseOffset < 18;
+          eyeSlope < 17 &&
+          noseOffset < 25;
 
         // Buffer zone
         const isWithinBufferZones = isFaceBigEnough &&
@@ -99,13 +110,13 @@ export async function runDetection(
           isBottomClear &&
           isUpright;
 
-        // Grace period logic (500ms)
+        // Grace period logic (1.2s)
         if (isPerfectPosition) {
           lastValidPositionTime = now;
           gracePeriodActive = false;
           color = "lime";
           message = "✅ Perfect! Hold still";
-        } else if (isWithinBufferZones && (now - lastValidPositionTime < 800 || gracePeriodActive)) {
+        } else if (isWithinBufferZones && (now - lastValidPositionTime < 1200 || gracePeriodActive)) {
           gracePeriodActive = true;
           color = "orange";
           message = "🟡 Keep holding...";
@@ -113,39 +124,32 @@ export async function runDetection(
           gracePeriodActive = false;
           color = "red";
 
-          // Feedback messages
-          if (isFaceTooClose) {
-            message = "📏 Move back slightly";
-          } else if (!isFaceBigEnough) {
-            message = "📷 Move a bit closer";
-          } else if (!isHorizontallyCentered) {
-            message = "↔️ Adjust left or right";
-          } else if (!isTopPositioned) {
-            message = "⬇️ Move down slightly";
-          } else if (!isBottomClear) {
-            message = "⬆️ Move up slightly";
-          } else if (!isUpright) {
-            message = "↕️ Straighten your head";
-          }
+          // Feedback
+          if (isFaceTooClose) message = "📏 Move back slightly";
+          else if (!isFaceBigEnough) message = "📷 Move a bit closer";
+          else if (!isHorizontallyCentered) message = "↔️ Adjust left or right";
+          else if (!isTopPositioned) message = "⬇️ Move down slightly";
+          else if (!isBottomClear) message = "⬆️ Move up slightly";
+          else if (!isUpright) message = "↕️ Straighten your head";
         }
 
-        // Timer for auto capture
+        // Timer for auto capture (faster, 3s)
         if (isPerfectPosition && !validFaceTimer && now - lastCaptureTime > 5000) {
           holdStillStartTime = now;
           validFaceTimer = setTimeout(() => {
             if (!isCapturing) {
               isCapturing = true;
               document.getElementById("capture").click();
-              lastCaptureTime = now;
+              lastCaptureTime = Date.now();
               setTimeout(() => {
                 isCapturing = false;
                 validFaceTimer = null;
               }, 3000);
             }
-          }, 5000);
+          }, 3000); // reduced from 5000ms
         }
 
-        // Reset timer
+        // Reset timer if moved out of position
         if (!isPerfectPosition && !gracePeriodActive && validFaceTimer) {
           clearTimeout(validFaceTimer);
           validFaceTimer = null;
@@ -154,34 +158,35 @@ export async function runDetection(
         // Countdown UI
         if (validFaceTimer) {
           const elapsed = now - holdStillStartTime;
-          const remaining = Math.max(0, 5 - Math.floor(elapsed / 1000));
+          const remaining = Math.max(0, 3 - Math.floor(elapsed / 1000));
           message = `✅ Auto-capturing in ${remaining}s...`;
 
-          if (document.getElementById("countdown-bar")) {
-            const progress = Math.min(100, (elapsed / 5000) * 100);
-            document.getElementById("countdown-bar").style.width = `${progress}%`;
+          const bar = document.getElementById("countdown-bar");
+          if (bar) {
+            const progress = Math.min(100, (elapsed / 3000) * 100);
+            bar.style.width = `${progress}%`;
           }
-        } else if (document.getElementById("countdown-bar")) {
-          document.getElementById("countdown-bar").style.width = "0%";
+        } else {
+          const bar = document.getElementById("countdown-bar");
+          if (bar) bar.style.width = "0%";
         }
       }
 
       // UI updates
-      if (document.querySelector("#face_position")) {
-        document.querySelector("#face_position").innerHTML = message;
-      }
+      const facePosEl = document.querySelector("#face_position");
+      if (facePosEl) facePosEl.innerHTML = message;
       if (captureBtn) {
         captureBtn.disabled = color !== "lime";
         captureBtn.classList.toggle("opacity-50", color !== "lime");
       }
       if (statusText) statusText.textContent = message;
 
-      // Visual feedback
+      // Visual overlay
       ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
       ctxOverlay.fillStyle = "rgba(0, 0, 0, 0.67)";
       ctxOverlay.fillRect(0, 0, overlay.width, overlay.height);
 
-      // Draw oval
+      // Cut-out oval
       ctxOverlay.save();
       ctxOverlay.globalCompositeOperation = "destination-out";
       ctxOverlay.beginPath();
@@ -197,7 +202,7 @@ export async function runDetection(
       ctxOverlay.fill();
       ctxOverlay.restore();
 
-      // Draw border
+      // Border
       ctxOverlay.save();
       ctxOverlay.beginPath();
       ctxOverlay.ellipse(
