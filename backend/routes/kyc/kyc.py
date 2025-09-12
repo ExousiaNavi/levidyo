@@ -122,18 +122,20 @@ async def kyc_page(request: Request):
         # print(us_player)
         # print("=====================================================")
         
-        if not user:
-            print("No session → show auth page")
-            return templates.TemplateResponse("pages/kyc/auth.html", {
-                "request": request,
-                "user": [],
-                "nav_links": [],
-                "current_page": "auth",
-            })
+        #new pathche no authentication
+        return RedirectResponse(url="/kyc/identification", status_code=303)
+        # if not user:
+        #     print("No session → show auth page")
+        #     return templates.TemplateResponse("pages/kyc/auth.html", {
+        #         "request": request,
+        #         "user": [],
+        #         "nav_links": [],
+        #         "current_page": "auth",
+        #     })
 
-        else:
-            # ✅ Redirect authenticated users to dashboard
-            return RedirectResponse(url="/kyc/identification", status_code=303)
+        # else:
+        #     # ✅ Redirect authenticated users to dashboard
+        #     return RedirectResponse(url="/kyc/identification", status_code=303)
 
 
         # COMMENTED FOR NOW NOT NEEDED

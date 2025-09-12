@@ -54,20 +54,30 @@ def file_to_base64_with_prefix(path: Path) -> str:
     
 @router.get("/kyc/identification", response_class=HTMLResponse)
 async def kyc_verification(request: Request):
-    user = check_auth_kyc(request)
-    kyc_status = user.get("user", {}).get("kyc_status", "not-verified")
-    is_kyc_verified = (kyc_status == "verified")
+    # Removing all authentication module
+    # user = check_auth_kyc(request)
+    # kyc_status = user.get("user", {}).get("kyc_status", "not-verified")
+    # is_kyc_verified = (kyc_status == "verified")
     doc_types = generate_doc_types()
 
-    if user:
-        return templates.TemplateResponse("pages/kyc/verification.html", {
-            "request": request,
-            "user": user,
-            "kyc_status": is_kyc_verified,
-            "doc_types": doc_types,
-            "nav_links": NAV_LINKS_KYC,
-            "current_page": "Identification",
-        }) 
+    return templates.TemplateResponse("pages/kyc/verification-new.html", {
+                "request": request,
+                "user": None,
+                "kyc_status": False,
+                "doc_types": doc_types,
+                "nav_links": NAV_LINKS_KYC,
+                "current_page": "Identification",
+            }) 
+
+    # if user:
+    #     return templates.TemplateResponse("pages/kyc/verification.html", {
+    #         "request": request,
+    #         "user": user,
+    #         "kyc_status": is_kyc_verified,
+    #         "doc_types": doc_types,
+    #         "nav_links": NAV_LINKS_KYC,
+    #         "current_page": "Identification",
+    #     }) 
 
 @router.post("/kyc/submit-documents")
 async def submit_kyc_documents(payload: KYCRequest):
@@ -105,6 +115,12 @@ async def submit_kyc_documents(payload: KYCRequest):
         print("🔎 KYC Submission Details:")
         print(json.dumps(payload.dict(), indent=2))
         
+        # Optionally, save to a file
+        with open('kyc_data.json', 'w') as json_file:
+            json.dump(kyc_data, json_file, indent=2)
+
+        print("✅ KYC data has been saved to 'kyc_data.json'")
+
         # ✅ Clear the directory after data is prepared
         shutil.rmtree(user_folder)
         print(f"🗑️ Cleared folder: {user_folder}")

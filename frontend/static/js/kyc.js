@@ -121,8 +121,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  if (nextToStep2) {
-    nextToStep2.addEventListener("click", async () => {
+  if (document.querySelector("#gotItBtn")) {
+    document.querySelector("#gotItBtn").addEventListener("click", async () => {
       document.getElementById("orientationGuide").classList.remove("hidden");
       await showOrientationGuide(
         "front",
@@ -230,9 +230,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     });
 
-  document.getElementById("backToStep1").addEventListener("click", async () => {
-    await clearCamera();
-  });
+  //document.getElementById("backToStep1").addEventListener("click", async () => {
+  //  await clearCamera();
+  //});
 
   document.getElementById("backToStep1CameraError").addEventListener("click", async () => {
     await clearCamera();
@@ -255,6 +255,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ===========================
   if (nextToStep3) {
     nextToStep3.addEventListener("click", async () => {
+      document.getElementById("stepTwo").classList.add("hidden");
       document.getElementById("orientationGuide").classList.remove("hidden");
       await showOrientationGuide(
         "back",
@@ -301,6 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
+  
   document
     .getElementById("tryAgainBackId")
     .addEventListener("click", async () => {
