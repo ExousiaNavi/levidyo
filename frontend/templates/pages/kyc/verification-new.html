@@ -357,37 +357,45 @@
     submitKycFinal.addEventListener("click", async () => {
       // Gather data
       const data = {
-        user_id: localStorage.getItem('user_id') ?? "default_user_id",
-        country: localStorage.getItem("country") ?? "Unknown",
-        documentType: localStorage.getItem("documentType") ?? "Not specified",
-        fullName: localStorage.getItem("fullName") ?? "Anonymous",
-        birthdate: localStorage.getItem("birthdate") ?? "1900-01-01",
-        address: localStorage.getItem("address") ?? "No address provided",
-        city: localStorage.getItem("city") ?? "Unknown city",
-        postalCode: localStorage.getItem("postalCode") ?? "000000",
-        idFront: localStorage.getItem("frontUpload"), // base64
-        idBack: localStorage.getItem("backUpload"),
-        selfie: localStorage.getItem("capturedFace"),
+        //user_id: localStorage.getItem('user_id') ?? "default_user_id",
+        //country: localStorage.getItem("country") ?? "Unknown",
+        //documentType: localStorage.getItem("documentType") ?? "Not specified",
+        //fullName: localStorage.getItem("fullName") ?? "Anonymous",
+        //birthdate: localStorage.getItem("birthdate") ?? "1900-01-01",
+        //address: localStorage.getItem("address") ?? "No address provided",
+        //city: localStorage.getItem("city") ?? "Unknown city",
+        //postalCode: localStorage.getItem("postalCode") ?? "000000",
+        //idFront: localStorage.getItem("frontUpload"), // base64
+        //idBack: localStorage.getItem("backUpload"),
+        //selfie: localStorage.getItem("capturedFace"),
+        documentFrontImage: localStorage.getItem("frontUpload"), // base64
+        documentBackImage: localStorage.getItem("backUpload"),  
+        documentOtherImage: localStorage.getItem("capturedFace"), // selfie
       };
 
       try {
-            const response = await fetch("/kyc/submit-documents", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-            });
+            //const response = await fetch("/kyc/submit-documents", {
+            //method: "POST",
+            //headers: {
+            //    "Content-Type": "application/json",
+            //},
+            //body: JSON.stringify(data),
+            //});
 
-            if (response.ok) {
+            //if (response.ok) {
+            window.parent.postMessage({
+              type: 'createDocument',
+              payload: data,
+              format: 'data:image/jpeg;base64'
+            }, '*'); // in prod replace * with parent origin
 
             document.getElementById("stepReview").classList.add("hidden");
             document.getElementById("kycUnderReview").classList.remove("hidden");
             stepBars.step6.classList.replace("bg-gray-200", "bg-green-500");
             localStorage.clear();
-            } else {
-            console.log("❌ Submission failed. Please try again.");
-            }
+            //} else {
+            //console.log("❌ Submission failed. Please try again.");
+            //}
         } catch (err) {
             console.error("KYC submission error:", err);
             console.log("⚠️ Network error. Please try again.");
@@ -395,6 +403,23 @@
 
     });
 
+    // Listen for response from parent
+    window.addEventListener('message', (event) => {
+      // NOTE: in production check event.origin
+      const data = event.data;
+      if (!data) return;
+
+      if (data.type === 'createDocumentResponse') {
+        if (data.status === 'success') {
+          statusEl.textContent = 'Status: Success — ' + (data.message || 'OK') + ' (ref: ' + (data.referenceId || '-') + ')';
+        } else {
+          statusEl.textContent = 'Status: Failed — ' + (data.message || 'Unknown error');
+        }
+      } else {
+        // ignore other messages
+        console.log('Iframe got other message:', data);
+      }
+    });
 
     document.getElementById("backToDashboard").addEventListener("click", () => {
         window.location.href = "/kyc/identification"; // Change to your dashboard URL

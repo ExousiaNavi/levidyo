@@ -17,6 +17,7 @@ import string
 import uuid
 # import pytesseract
 import numpy as np
+import base64
 # from matplotlib import pyplot as plt
 # from pytesseract import Output
 
@@ -260,11 +261,18 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
         # Encode with watermark positioned based on face if found
         face_validated = encode_image(str(input_path), str(input_path), code, str(STATIC_DIR_LOGO), face_box, debug=False)
 
+        # Convert processed image to Base64 JPEG
+        processed_img = cv2.imread(str(input_path))
+        _, buffer = cv2.imencode('.jpg', processed_img)  # encode as JPEG
+        img_base64 = base64.b64encode(buffer).decode('utf-8')
+        base64_data = f"data:image/jpeg;base64,{img_base64}"
+
         return JSONResponse({
             "face_validated": face_validated,
             "message": "Image encoded and saved successfully.",
             "image_url": f"/static/uploads/bin/{filename}",# processed image storage temporary
-            "filename" : filename
+            "filename" : filename,
+            "image_base64": base64_data
         })
 
     except Exception as e:

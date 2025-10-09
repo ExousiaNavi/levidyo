@@ -62,7 +62,8 @@ export async function captureFace(
             }
 
             // success path
-            capturedFace = data.image_url;
+            // capturedFace = data.image_url;
+            capturedFace = data.image_base64;
             await setCapturedFace(capturedFace);
 
             const loader = document.getElementById("successLoader");
