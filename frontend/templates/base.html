@@ -161,68 +161,14 @@
       </div>
     </div>
     <div class="h-screen w-full overflow-hidden flex font-sans text-gray-800">
-      {% if user and nav_links | length > 0 %}
-      <!-- Desktop Sidebar -->
-      <aside
-        class="hidden md:flex md:flex-col w-64 h-screen p-6 glass border-r border-gray-200 flex-shrink-0"
-      >
-        {% include 'components/sidebar.html' %}
-      </aside>
-      {% endif %}
 
-      <!-- Mobile Sidebar Drawer -->
-      <!-- Overlay -->
-      {% if user and nav_links | length > 0 %}
-      <div
-        id="mobileSidebarOverlay"
-        class="fixed inset-0 z-[999] bg-black/50 opacity-0 pointer-events-none transition-opacity duration-300"
-      ></div>
-
-      <div
-        id="mobileSidebar"
-        class="fixed top-0 left-0 z-[9999] w-64 h-full bg-white transform -translate-x-full transition-transform duration-300"
-      >
-        <div class="p-6 overflow-y-auto h-full pt-10">
-          <button
-            id="mobileSidebarClose"
-            class="mb-4 text-gray-500 hover:text-gray-700"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-          {% include 'components/sidebar.html' %}
-        </div>
-      </div>
-      {% endif %}
       <!-- Main Content Area -->
       <div
-        class="flex-1 h-screen overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 mt-6"
+        class="flex-1 h-screen overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100"
       >
-        <!-- Mobile Header -->
-        <header
-          class="md:hidden bg-white/80 backdrop-blur-sm shadow px-4 py-3 flex justify-between items-center sticky top-0 z-40"
-        >
-          <!-- <div>
-          <h1 class="text-lg font-bold text-green-700 flex items-center gap-1">
-            <i data-lucide="bell" class="w-5 h-5 text-green-600"></i>
-            Notification App
-          </h1>
-          {% if user and nav_links | length > 0 %}
-          <p class="text-xs text-gray-500">
-            {{ user.role or "N/A" }} • {{ user.email }}
-          </p>
-          {% endif %}
-        </div> -->
-          {% if user and nav_links | length > 0 %}
-          <button id="mobileMenuToggle" class="text-gray-600">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-          </button>
-          {%endif%}
-        </header>
-
-        <!-- Mobile Bottom Nav -->
 
         <!-- Actual Page Content -->
-        <main class="p-2 sm:mt-4 md:mt-0 md:ml-0 animate-fade-in mb-10">
+        <main class="animate-fade-in mb-10">
           <!-- <img id="f" src="" alt="" />
           <img id="b" src="" alt="" />
           <img id="ff" src="" alt="" /> -->
