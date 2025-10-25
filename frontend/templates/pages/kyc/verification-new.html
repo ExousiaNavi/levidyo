@@ -295,7 +295,7 @@
 
       reviewFrontImg.src = localStorage.getItem("frontUpload");
       reviewBackImg.src = localStorage.getItem("backUpload");
-      reviewSelfieImg.src = localStorage.getItem("capturedFace");
+      reviewSelfieImg.src = localStorage.getItem("capturedFaceOriginal");
     });
 
     // ---- STEP 5 ----
@@ -331,7 +331,7 @@
 
       reviewFrontImg.src = localStorage.getItem("frontUpload");
       reviewBackImg.src = localStorage.getItem("backUpload");
-      reviewSelfieImg.src = localStorage.getItem("capturedFace");
+      reviewSelfieImg.src = localStorage.getItem("capturedFaceOriginal");
     });
 
     backToStep3.addEventListener("click", () => {
@@ -340,7 +340,7 @@
       stepBars.step4.classList.replace("bg-green-500", "bg-gray-200");
     });
 
-    // ---- Step 5 ----
+    // ---- Step 4 ----
     backToStep4.addEventListener("click", () => {
       steps.five.classList.add("hidden");
       steps.four.classList.remove("hidden");
