@@ -4,11 +4,9 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from backend.config import settings
-from backend.routes import auth, dashboard, deposit, profile, users, amount, context, empty,username, verification
+from backend.routes import context, empty,username, verification
 from backend.routes.kyc import auth_kyc, kyc, kyc_dashboard, kyc_verification, kyc_verified
-from backend.routes.documentation import index as documentation_index
-# crm routes
-from backend.routes.crm import crm_dashboard
+
 import backend.core.firebase  # auto-runs initialization
 from backend.core.whitelist import restrict_ip_middleware  # available ip
 
@@ -35,12 +33,6 @@ app.mount("/static", NoCacheStaticFiles(directory=BASE_DIR / "frontend/static"),
 
 # Include routers
 app.include_router(context.router)
-app.include_router(auth.router)
-app.include_router(dashboard.router)
-app.include_router(deposit.router)
-app.include_router(profile.router)
-app.include_router(users.router)
-app.include_router(amount.router)
 app.include_router(username.router)
 app.include_router(verification.router)
 
@@ -51,11 +43,6 @@ app.include_router(kyc_dashboard.router)
 app.include_router(kyc_verification.router)
 app.include_router(kyc_verified.router)
 
-# crm routes
-app.include_router(crm_dashboard.router)
-
-# Documentation routes
-app.include_router(documentation_index.router)
 
 # Empty route
 app.include_router(empty.router)

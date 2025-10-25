@@ -18,6 +18,7 @@ import uuid
 # import pytesseract
 import numpy as np
 import base64
+import traceback
 # from matplotlib import pyplot as plt
 # from pytesseract import Output
 
@@ -115,7 +116,7 @@ def detect_card_with_box(image_path, template_path="card_template.png"):
     except Exception as e:
         return {"valid": False, "message": f"Error: {str(e)}"}
     
-@router.get("/kyc")
+@router.get("/")
 async def kyc_page(request: Request):
         user = check_auth_kyc(request)
         # us_player = user.get('roles', {}).get('is_player', False)  # Default to False if not found
@@ -226,57 +227,136 @@ async def verify_id(
             }
         )
 
-# face logic
+
+# face logic (clean version)
 @router.post("/upload-image")
 async def upload_image(image: UploadFile, message: str = Form(...)):
     try:
-        
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"{timestamp}_{uuid.uuid4().hex}.png"
         input_path = UPLOAD_DIR / "bin" / filename
 
-        # Save original image
+        # --- Step 1: Save the original uploaded image ---
         with open(input_path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
 
-        # Load saved image for face detection
+        # --- Step 2: Convert the original image to Base64 BEFORE processing ---
+        with open(input_path, "rb") as original_file:
+            original_bytes = original_file.read()
+            original_base64 = base64.b64encode(original_bytes).decode("utf-8")
+            original_base64_data = f"data:image/png;base64,{original_base64}"
+
+        # --- Step 3: Detect face ---
         img = cv2.imread(str(input_path))
+        if img is None:
+            raise ValueError(f"cv2.imread failed to read image at {input_path}")
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
         face_cascade = cv2.CascadeClassifier(HAAR_CASCADE_PATH)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-
         if face_cascade.empty():
             raise IOError(f"Failed to load Haar cascade from {HAAR_CASCADE_PATH}")
 
-        face_box = None
-        if face_box is not None:
-            # Use the largest face (assumes closer = larger area)
-            face_box = max(faces, key=lambda box: box[2] * box[3])  # (x, y, w, h)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        face_box = max(faces, key=lambda box: box[2] * box[3]) if len(faces) > 0 else None
 
-        # Generate secret code to embed
+        # --- Step 4: Generate secret code and encode image ---
         code = generate_random_message(16)
-        output_path = ENCODED_DIR / filename
+        face_validated = encode_image(
+            str(input_path),
+            str(input_path),
+            code,
+            str(STATIC_DIR_LOGO),
+            face_box
+        )
 
-        # Encode with watermark positioned based on face if found
-        face_validated = encode_image(str(input_path), str(input_path), code, str(STATIC_DIR_LOGO), face_box, debug=False)
-
-        # Convert processed image to Base64 JPEG
+        # --- Step 5: Convert processed image to Base64 ---
         processed_img = cv2.imread(str(input_path))
-        _, buffer = cv2.imencode('.jpg', processed_img)  # encode as JPEG
-        img_base64 = base64.b64encode(buffer).decode('utf-8')
-        base64_data = f"data:image/jpeg;base64,{img_base64}"
+        if processed_img is None:
+            raise ValueError(f"Processed image not found at {input_path}")
 
+        _, buffer = cv2.imencode('.jpg', processed_img)
+        processed_base64 = base64.b64encode(buffer).decode('utf-8')
+        processed_base64_data = f"data:image/jpeg;base64,{processed_base64}"
+
+        # --- Step 6: Delete local file after all conversions ---
+        if input_path.exists():
+            input_path.unlink()
+
+        # --- Step 7: Return both Base64 images ---
         return JSONResponse({
             "face_validated": face_validated,
             "message": "Image encoded and saved successfully.",
-            "image_url": f"/static/uploads/bin/{filename}",# processed image storage temporary
-            "filename" : filename,
-            "image_base64": base64_data
+            "filename": filename,
+            "original_image_base64": original_base64_data,
+            "image_base64": processed_base64_data
         })
 
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"Encoding failed: {str(e)}"})
+        tb = traceback.format_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"Encoding failed: {str(e)}",
+                "trace": tb
+            }
+        )
+
+
+# face logic original
+# @router.post("/upload-image")
+# async def upload_image(image: UploadFile, message: str = Form(...)):
+#     try:
+        
+#         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+#         filename = f"{timestamp}_{uuid.uuid4().hex}.png"
+#         input_path = UPLOAD_DIR / "bin" / filename
+
+#         # Save original image
+#         with open(input_path, "wb") as buffer:
+#             shutil.copyfileobj(image.file, buffer)
+
+#         # Load saved image for face detection
+#         img = cv2.imread(str(input_path))
+#         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+#         face_cascade = cv2.CascadeClassifier(HAAR_CASCADE_PATH)
+#         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+#         if face_cascade.empty():
+#             raise IOError(f"Failed to load Haar cascade from {HAAR_CASCADE_PATH}")
+
+#         face_box = None
+#         if face_box is not None:
+#             # Use the largest face (assumes closer = larger area)
+#             face_box = max(faces, key=lambda box: box[2] * box[3])  # (x, y, w, h)
+
+#         # Generate secret code to embed
+#         code = generate_random_message(16)
+#         output_path = ENCODED_DIR / filename
+
+#         # Encode with watermark positioned based on face if found
+#         face_validated = encode_image(str(input_path), str(input_path), code, str(STATIC_DIR_LOGO), face_box, debug=False)
+
+#         # Convert processed image to Base64 JPEG
+#         processed_img = cv2.imread(str(input_path))
+#         _, buffer = cv2.imencode('.jpg', processed_img)  # encode as JPEG
+#         img_base64 = base64.b64encode(buffer).decode('utf-8')
+#         base64_data = f"data:image/jpeg;base64,{img_base64}"
+
+#         # Delete the original image before returning
+#         if input_path.exists():
+#             input_path.unlink()
+
+#         return JSONResponse({
+#             "face_validated": face_validated,
+#             "message": "Image encoded and saved successfully.",
+#             "image_url": f"/static/uploads/bin/{filename}",# processed image storage temporary
+#             "filename" : filename,
+#             "image_base64": base64_data
+#         })
+
+#     except Exception as e:
+#         return JSONResponse(status_code=500, content={"detail": f"Encoding failed: {str(e)}"})
 
 
 @router.delete("/delete-image")
