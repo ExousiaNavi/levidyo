@@ -24,6 +24,14 @@ export async function getCapturedFace() {
   return localStorage.getItem("capturedFace") || "";
 }
 
+export async function setOriginalCapturedFace(dataUrl) {
+  localStorage.setItem("capturedFaceOriginal", dataUrl);
+}
+
+export async function getOriginalCapturedFace() {
+  return localStorage.getItem("capturedFaceOriginal") || "";
+}
+
 export async function setCapturedFront(dataUrl) {
   localStorage.setItem("capturedFront", dataUrl);
 }

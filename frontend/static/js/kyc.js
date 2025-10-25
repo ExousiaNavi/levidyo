@@ -4,7 +4,7 @@ import { hideCameraLoading, showCameraLoading } from "./module/loader.js";
 import { runDetection } from "./module/detection.js";
 import { showCameraError, hideCameraError } from "./module/error.js";
 import { captureFace, captureID } from "./module/capture.js";
-import { getCapturedFace, setCapturedFace } from "./module/state.js";
+import { getCapturedFace, setCapturedFace, getOriginalCapturedFace, setOriginalCapturedFace } from "./module/state.js";
 import { delete_uploaded_face } from "./module/delete.js";
 import { showOrientationGuide } from "./module/animation.js";
 document.addEventListener("DOMContentLoaded", async () => {
@@ -166,6 +166,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (captureFrontIdBtn) {
     captureFrontIdBtn.addEventListener("click", async () => {
+      // alert("yes its clicked")
       const success = await captureID(
         "idFront",
         idCanvas,
@@ -185,6 +186,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("frontIdPreviewImage").src =
           localStorage.getItem("frontUpload");
         document.getElementById("nextToStep3").disabled = false;
+        // Disable the button
+        captureFrontIdBtn.disabled = true;
+        captureFrontIdBtn.classList.remove("bg-green-500", "hover:bg-green-600");
+        captureFrontIdBtn.classList.add("bg-gray-300");
+
+
       } else {
         console.log("❌ Failed to capture ID front.");
       }
@@ -216,6 +223,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Clear the local storage for front upload
       localStorage.removeItem("frontUpload");
+
+      const btn = document.getElementById("captureIdFront");
+      // Enable button
+      btn.disabled = false;
+      // Remove gray
+      btn.classList.remove("bg-gray-300");
+      // Add green and hover classes
+      btn.classList.add("bg-green-500", "hover:bg-green-600");
 
       // Restart the camera
       await startIDCamera(
@@ -297,6 +312,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("backIdPreviewImage").src =
           localStorage.getItem("backUpload");
         document.getElementById("nextToStep4").disabled = false;
+        captureBackIdBtn.disabled = true;
+        captureBackIdBtn.classList.remove("bg-green-500", "hover:bg-green-600");
+        captureBackIdBtn.classList.add("bg-gray-300");
       } else {
         console.log("❌ Failed to capture ID Back.");
       }
@@ -316,6 +334,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Clear the local storage for front upload
       localStorage.removeItem("backUpload");
+
+      const btnb = document.getElementById("captureIdBack");
+      // Enable button
+      btnb.disabled = false;
+      // Remove gray
+      btnb.classList.remove("bg-gray-300");
+      // Add green and hover classes
+      btnb.classList.add("bg-green-500", "hover:bg-green-600");
 
       // Restart the camera
       await startIDCamera(
@@ -488,16 +514,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         video,
         canvas,
         capturedFace,
-        setCapturedFace
+        setCapturedFace,
+        setOriginalCapturedFace
       );
 
       if (success) {
-        console.log("✅ Face captured successfully:", await getCapturedFace());
+        console.log("✅ Face captured successfully:", await getOriginalCapturedFace());
         await stopCamera();
         await stopCameraForced(video)
         cameraPage.classList.add("hidden");
         previewPage.classList.remove("hidden");
-        previewImage.src = await getCapturedFace();
+        previewImage.src = await getOriginalCapturedFace();
         captureBtn.disabled = false;
         document.getElementById("nextToStep5").disabled = false;
         // continueBtn.classList.remove("hidden");

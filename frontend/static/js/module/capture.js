@@ -5,7 +5,8 @@ export async function captureFace(
   video,
   canvas,
   capturedFace,
-  setCapturedFace
+  setCapturedFace,
+  setOriginalCapturedFace
 ) {
   try {
     captureBtn.disabled = true;
@@ -66,7 +67,7 @@ export async function captureFace(
             // capturedFace = data.image_url;
             capturedFace = data.image_base64;
             await setCapturedFace(capturedFace);
-
+            await setOriginalCapturedFace(data.original_image_base64)
             const loader = document.getElementById("successLoader");
             if (loader) {
               loader.classList.remove("hidden");
