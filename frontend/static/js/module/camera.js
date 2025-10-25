@@ -54,18 +54,14 @@ export async function setupCameraAndRunDetection(
           video.style.height = "100%";
           video.style.left = "0";
           video.style.top = "50%";
-          video.style.transform = `translateY(-50%) ${
-            shouldFaceUser ? "scaleX(-1)" : ""
-          }`;
+          video.style.transform = `translateY(-50%)`;
         } else {
           // Video is taller than container (portrait)
           video.style.width = "100%";
           video.style.height = "100%";
           video.style.left = "50%";
           video.style.top = "0";
-          video.style.transform = `translateX(-50%) ${
-            shouldFaceUser ? "scaleX(-1)" : ""
-          }`;
+          video.style.transform = `translateX(-50%)`;
         }
 
         // video.style.position = "absolute";
