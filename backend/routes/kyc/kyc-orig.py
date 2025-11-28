@@ -233,29 +233,24 @@ async def verify_id(
 async def upload_image(image: UploadFile, message: str = Form(...)):
     try:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"{timestamp}_{uuid.uuid4().hex}.jpg"  # Use JPG extension
+        filename = f"{timestamp}_{uuid.uuid4().hex}.png"
         input_path = UPLOAD_DIR / "bin" / filename
 
-        # --- Step 1: Save the uploaded image with original quality ---
-        image_data = await image.read()
+        # --- Step 1: Save the original uploaded image ---
         with open(input_path, "wb") as buffer:
-            buffer.write(image_data)
+            shutil.copyfileobj(image.file, buffer)
 
-        # --- Step 2: Convert the original image to Base64 WITHOUT re-encoding ---
-        original_base64 = base64.b64encode(image_data).decode("utf-8")
-        original_base64_data = f"data:image/jpeg;base64,{original_base64}"
+        # --- Step 2: Convert the original image to Base64 BEFORE processing ---
+        with open(input_path, "rb") as original_file:
+            original_bytes = original_file.read()
+            original_base64 = base64.b64encode(original_bytes).decode("utf-8")
+            original_base64_data = f"data:image/png;base64,{original_base64}"
 
-        # --- Step 3: Read image with OpenCV preserving quality ---
-        img_array = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        
+        # --- Step 3: Detect face ---
+        img = cv2.imread(str(input_path))
         if img is None:
-            # Fallback: try reading from file
-            img = cv2.imread(str(input_path))
-            if img is None:
-                raise ValueError(f"Failed to decode image")
+            raise ValueError(f"cv2.imread failed to read image at {input_path}")
 
-        # --- Step 4: Detect face ---
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         face_cascade = cv2.CascadeClassifier(HAAR_CASCADE_PATH)
         if face_cascade.empty():
@@ -264,7 +259,7 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
         face_box = max(faces, key=lambda box: box[2] * box[3]) if len(faces) > 0 else None
 
-        # --- Step 5: Generate secret code and encode image ---
+        # --- Step 4: Generate secret code and encode image ---
         code = generate_random_message(16)
         face_validated = encode_image(
             str(input_path),
@@ -274,22 +269,20 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
             face_box
         )
 
-        # --- Step 6: Read processed image with HIGH QUALITY settings ---
+        # --- Step 5: Convert processed image to Base64 ---
         processed_img = cv2.imread(str(input_path))
         if processed_img is None:
             raise ValueError(f"Processed image not found at {input_path}")
-        print("PASSEDD STEP 6")
-        # Use HIGH quality JPEG encoding (95% quality)
-        encode_params = [cv2.IMWRITE_JPEG_QUALITY, 100]
-        _, buffer = cv2.imencode('.jpg', processed_img, encode_params)
+
+        _, buffer = cv2.imencode('.jpg', processed_img)
         processed_base64 = base64.b64encode(buffer).decode('utf-8')
         processed_base64_data = f"data:image/jpeg;base64,{processed_base64}"
-        print("PASSEDD STEP 7")
-        # --- Step 7: Clean up ---
-        # if input_path.exists():
-        #     input_path.unlink()
 
-        # --- Step 8: Return both Base64 images ---
+        # --- Step 6: Delete local file after all conversions ---
+        if input_path.exists():
+            input_path.unlink()
+
+        # --- Step 7: Return both Base64 images ---
         return JSONResponse({
             "face_validated": face_validated,
             "message": "Image encoded and saved successfully.",
