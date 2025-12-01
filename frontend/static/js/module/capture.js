@@ -116,14 +116,14 @@ export async function captureFace(
     const captureLoader = document.getElementById("captureLoader");
     if (captureLoader) captureLoader.classList.remove("hidden");
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     clearInterval(detectionInterval);
 
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
     // --- Crop settings ---
-    const CROP_TOP_RATIO = 0.1;    // crop 10% from top
+    const CROP_TOP_RATIO = 0.1; // crop 10% from top
     const CROP_BOTTOM_RATIO = 0.1; // crop 10% from bottom
     const cropTop = Math.floor(videoHeight * CROP_TOP_RATIO);
     const cropBottom = Math.floor(videoHeight * CROP_BOTTOM_RATIO);
@@ -132,7 +132,11 @@ export async function captureFace(
 
     // --- Resize settings ---
     const MAX_DIMENSION = 1280;
-    const scale = Math.min(MAX_DIMENSION / videoWidth, MAX_DIMENSION / croppedHeight, 1);
+    const scale = Math.min(
+      MAX_DIMENSION / videoWidth,
+      MAX_DIMENSION / croppedHeight,
+      1
+    );
     const captureWidth = Math.floor(videoWidth * scale);
     const captureHeight = Math.floor(croppedHeight * scale);
 
@@ -176,17 +180,22 @@ export async function captureFace(
 
     // --- Optimize and upload ---
     const finalBlob = await optimizeImageForQuota(outputCanvas);
-    await uploadImage(finalBlob, capturedFace, setCapturedFace, setOriginalCapturedFace);
+    await uploadImage(
+      finalBlob,
+      capturedFace,
+      setCapturedFace,
+      setOriginalCapturedFace
+    );
 
     if (captureLoader) captureLoader.classList.add("hidden");
     captureBtn.disabled = false;
     return true;
-
   } catch (error) {
     console.error("Capture error:", error);
     const errorLoader = document.getElementById("errorLoader");
     if (errorLoader) {
-      errorLoader.textContent = error.message || "Capture failed. Please try again.";
+      errorLoader.textContent =
+        error.message || "Capture failed. Please try again.";
       errorLoader.classList.remove("hidden");
       setTimeout(() => errorLoader.classList.add("hidden"), 3000);
     }
@@ -197,23 +206,26 @@ export async function captureFace(
   }
 }
 
-
 function enhanceCanvasMildly(canvas) {
   const ctx = canvas.getContext("2d");
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
 
-  const contrast = 1.05, brightness = 3, saturation = 1.02;
+  const contrast = 1.05,
+    brightness = 3,
+    saturation = 1.02;
 
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i+1], b = data[i+2];
-    const lum = 0.299*r + 0.587*g + 0.114*b;
+    const r = data[i],
+      g = data[i + 1],
+      b = data[i + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
     let newR = (r - 128) * contrast + 128 + brightness;
     let newG = (g - 128) * contrast + 128 + brightness;
     let newB = (b - 128) * contrast + 128 + brightness;
-    data[i]   = Math.min(255, Math.max(0, lum + (newR - lum) * saturation));
-    data[i+1] = Math.min(255, Math.max(0, lum + (newG - lum) * saturation));
-    data[i+2] = Math.min(255, Math.max(0, lum + (newB - lum) * saturation));
+    data[i] = Math.min(255, Math.max(0, lum + (newR - lum) * saturation));
+    data[i + 1] = Math.min(255, Math.max(0, lum + (newG - lum) * saturation));
+    data[i + 2] = Math.min(255, Math.max(0, lum + (newB - lum) * saturation));
   }
 
   ctx.putImageData(imgData, 0, 0);
@@ -226,8 +238,10 @@ async function optimizeImageForQuota(canvas) {
   let bestBlob = null;
 
   // Step 1: Reduce quality
-  for (const quality of [0.75,0.65,0.55,0.45,0.35]) {
-    const blob = await new Promise(r => currentCanvas.toBlob(r, "image/jpeg", quality));
+  for (const quality of [0.75, 0.65, 0.55, 0.45, 0.35]) {
+    const blob = await new Promise((r) =>
+      currentCanvas.toBlob(r, "image/jpeg", quality)
+    );
     if (blob.size <= TARGET_MAX_SIZE) return blob;
     if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
   }
@@ -242,8 +256,16 @@ async function optimizeImageForQuota(canvas) {
       const ctx = reducedCanvas.getContext("2d");
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(currentCanvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
-      const blob = await new Promise(r => reducedCanvas.toBlob(r, "image/jpeg", 0.7));
+      ctx.drawImage(
+        currentCanvas,
+        0,
+        0,
+        reducedCanvas.width,
+        reducedCanvas.height
+      );
+      const blob = await new Promise((r) =>
+        reducedCanvas.toBlob(r, "image/jpeg", 0.7)
+      );
       if (blob.size <= TARGET_MAX_SIZE) return blob;
       if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
       factor -= 0.1;
@@ -252,19 +274,29 @@ async function optimizeImageForQuota(canvas) {
 
   // Step 3: Fallback to PNG
   if (bestBlob && bestBlob.size > TARGET_MAX_SIZE) {
-    const pngBlob = await new Promise(r => currentCanvas.toBlob(r, "image/png"));
+    const pngBlob = await new Promise((r) =>
+      currentCanvas.toBlob(r, "image/png")
+    );
     if (pngBlob.size < bestBlob.size) bestBlob = pngBlob;
   }
 
   return bestBlob;
 }
 
-async function uploadImage(blob, capturedFace, setCapturedFace, setOriginalCapturedFace) {
+async function uploadImage(
+  blob,
+  capturedFace,
+  setCapturedFace,
+  setOriginalCapturedFace
+) {
   const formData = new FormData();
   formData.append("image", blob, "captured.jpg");
   formData.append("message", "hidden message");
 
-  const response = await fetch("/upload-image", { method: "POST", body: formData });
+  const response = await fetch("/upload-image", {
+    method: "POST",
+    body: formData,
+  });
   if (!response.ok) throw new Error("Upload failed");
 
   const data = await response.json();
@@ -280,7 +312,6 @@ async function uploadImage(blob, capturedFace, setCapturedFace, setOriginalCaptu
     setTimeout(() => loader.classList.add("hidden"), 3000);
   }
 }
-
 
 export async function captureID(
   side, // "front" or "back"
@@ -332,27 +363,29 @@ export async function captureID(
       offsetY = 0;
 
     if (isMobile) {
-      // For mobile (rotated) - maintain aspect ratio
+      // Cover canvas entirely
       const scale =
-        Math.min(targetWidth / videoHeight, targetHeight / videoWidth) *
+        Math.max(targetWidth / videoHeight, targetHeight / videoWidth) *
         zoomFactor;
 
       drawWidth = videoWidth * scale;
       drawHeight = videoHeight * scale;
 
+      const offsetX = (targetWidth - drawWidth) / 2;
+      const offsetY = (targetHeight - drawHeight) / 2;
+
       ctx.save();
       ctx.translate(targetWidth / 2, targetHeight / 2);
       ctx.rotate(-Math.PI / 2);
 
-      // Draw with high quality scaling
       ctx.drawImage(
         enhancedImage,
         0,
         0,
         videoWidth,
         videoHeight,
-        -drawWidth / 2,
-        -drawHeight / 2,
+        offsetX - targetWidth / 2,
+        offsetY - targetHeight / 2,
         drawWidth,
         drawHeight
       );
@@ -413,10 +446,16 @@ export async function captureID(
     if (side === "idFront") {
       localStorage.setItem("frontUpload", verification?.base64_original);
       // stored the processed id
-      localStorage.setItem("frontUploadWaterMarked", verification?.base64_watermarked)
+      localStorage.setItem(
+        "frontUploadWaterMarked",
+        verification?.base64_watermarked
+      );
     } else {
       localStorage.setItem("backUpload", verification?.base64_original);
-      localStorage.setItem("backUploadWaterMarked", verification?.base64_watermarked)
+      localStorage.setItem(
+        "backUploadWaterMarked",
+        verification?.base64_watermarked
+      );
     }
     return true;
   } catch (error) {
