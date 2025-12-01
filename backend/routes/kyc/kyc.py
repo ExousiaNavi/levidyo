@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse,RedirectResponse
 # from backend.core.firebase import auth as firebase_auth, db
 from backend.core.templates import templates
 from backend.core.auth import USERS #for demo purposes login
-from backend.utils.stego_utils import encode_image,encode_text_image,decode_image
+from backend.utils.stego_utils import encode_image,encode_id_image, encode_text_image,decode_image
 from backend.core.auth import check_auth,check_auth_kyc, NAV_LINKS, NAV_LINKS_CRM
 from datetime import timedelta, datetime
 # import json
@@ -286,8 +286,8 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
         processed_base64_data = f"data:image/jpeg;base64,{processed_base64}"
         print("PASSEDD STEP 7")
         # --- Step 7: Clean up ---
-        # if input_path.exists():
-        #     input_path.unlink()
+        if input_path.exists():
+            input_path.unlink()
 
         # --- Step 8: Return both Base64 images ---
         return JSONResponse({
@@ -308,6 +308,87 @@ async def upload_image(image: UploadFile, message: str = Form(...)):
             }
         )
 
+
+@router.post("/upload-image-id")
+async def upload_image_id(data: dict):
+    try:
+        # ---------------------------------
+        # 1) Extract incoming data
+        # ---------------------------------
+        image_base64 = data.get("image")
+        side = data.get("side")
+
+        # Extract raw base64 part
+        header, encoded = image_base64.split(",", 1)
+        image_bytes = base64.b64decode(encoded)
+
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_name = f"{timestamp}_{uuid.uuid4().hex}.jpg"
+
+        # Temp file paths
+        input_path = UPLOAD_DIR / "bin" / f"orig_{unique_name}"
+        output_path = UPLOAD_DIR / "bin" / f"wm_{unique_name}"
+
+        # ---------------------------------
+        # 2) Save original temp image
+        # ---------------------------------
+        with open(input_path, "wb") as f:
+            f.write(image_bytes)
+
+        # ---------------------------------
+        # 3) Apply watermark + LSB encoding
+        # ---------------------------------
+        encode_id_image(
+            input_path=str(input_path),
+            output_path=str(output_path),
+            secret_text="secure_text_here",  # you can generate session hash
+            watermark_path=str(STATIC_DIR_LOGO)
+        )
+
+        # ---------------------------------
+        # 4) Convert both output images to base64
+        # ---------------------------------
+        with open(input_path, "rb") as f:
+            original_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        with open(output_path, "rb") as f:
+            watermarked_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        # Put data URLs
+        original_data_url = f"data:image/jpeg;base64,{original_b64}"
+        watermarked_data_url = f"data:image/jpeg;base64,{watermarked_b64}"
+
+        # ---------------------------------
+        # 5) Delete temporary files
+        # ---------------------------------
+        try:
+            if input_path.exists():
+                os.remove(input_path)
+            if output_path.exists():
+                os.remove(output_path)
+
+        except Exception as cleanup_err:
+            print("⚠ Cleanup failed:", cleanup_err)
+
+        # ---------------------------------
+        # 6) Return JSON response
+        # ---------------------------------
+        return {
+            "status": "success",
+            "side": side,
+            "base64_original": original_data_url,
+            "base64_watermarked": watermarked_data_url
+        }
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"Processing failed: {str(e)}",
+                "trace": tb
+            }
+        )
 
 # face logic original
 # @router.post("/upload-image")

@@ -117,6 +117,108 @@ def encode_image(input_path: str, output_path: str, secret_text: str,
     cv2.imwrite(output_path, img)
     return found_face
 
+def encode_id_image(
+    input_path: str,
+    output_path: str,
+    secret_text: str,
+    watermark_path: str = "watermark.png",
+):
+    img = cv2.imread(input_path)
+    if img is None:
+        raise ValueError("Invalid input image")
+
+    h, w = img.shape[:2]
+
+    # ---------------------------------------------------
+    # 1) Add timestamp watermark (UTC → GMT+8)
+    # ---------------------------------------------------
+    utc_time = datetime.now(timezone.utc)
+    local_time = utc_time + timedelta(hours=8)
+    timestamp_text = local_time.strftime("%Y-%m-%d %H:%M")
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.5  # same as encode_image
+    thickness = 1
+    color = (255, 255, 255)
+
+    text_size = cv2.getTextSize(timestamp_text, font, scale, thickness)[0]
+    x_text = w - text_size[0] - 10
+    y_text = h - 10
+
+    cv2.putText(img, timestamp_text, (x_text, y_text), font, scale, color, thickness)
+
+    # ---------------------------------------------------
+    # 2) Load watermark
+    # ---------------------------------------------------
+    watermark = cv2.imread(watermark_path, cv2.IMREAD_UNCHANGED)
+    if watermark is None:
+        raise ValueError("Invalid watermark image path")
+
+    wm_h, wm_w = watermark.shape[:2]
+
+    # ---------------------------------------------------
+    # 3) Resize watermark proportionally (same as encode_image)
+    # Max 25% height or 40% width
+    # ---------------------------------------------------
+    target_height = min(h * 0.35, w * 0.5)
+    scale_factor = target_height / wm_h
+    new_w = int(wm_w * scale_factor)
+    new_h = int(wm_h * scale_factor)
+    watermark = cv2.resize(watermark, (new_w, new_h))
+    wm_h, wm_w = watermark.shape[:2]  # update after resize
+
+    # ---------------------------------------------------
+    # 4) Position watermark at bottom center
+    # ---------------------------------------------------
+    x_wm = (w - wm_w) // 2
+    y_wm = h - wm_h - int(h * 0.05)  # padding same as encode_image
+
+    # ---------------------------------------------------
+    # 5) Alpha blending
+    # ---------------------------------------------------
+    overlay = img.copy()
+    if watermark.shape[2] == 4:
+        alpha_channel = watermark[:, :, 3] / 255.0 * 0.4
+        watermark_rgb = watermark[:, :, :3]
+    else:
+        alpha_channel = np.ones((wm_h, wm_w), dtype=float) * 0.4
+        watermark_rgb = watermark
+
+    roi = overlay[y_wm:y_wm + wm_h, x_wm:x_wm + wm_w]
+    for c in range(3):
+        roi[:, :, c] = watermark_rgb[:, :, c] * alpha_channel + roi[:, :, c] * (1 - alpha_channel)
+
+    overlay[y_wm:y_wm + wm_h, x_wm:x_wm + wm_w] = roi
+
+    # ---------------------------------------------------
+    # 6) Convert to uint8 BEFORE LSB encoding
+    # ---------------------------------------------------
+    img = np.clip(overlay, 0, 255).astype(np.uint8)
+
+    # ---------------------------------------------------
+    # 7) LSB encode secret text
+    # ---------------------------------------------------
+    binary_secret = "".join(format(ord(c), "08b") for c in secret_text)
+    binary_secret += "1111111111111110"  # end flag
+    index = 0
+    height, width, channels = img.shape
+    flat_img = img.reshape(-1, channels)
+
+    for i in range(len(flat_img)):
+        for c in range(3):
+            if index < len(binary_secret):
+                flat_img[i, c] = (flat_img[i, c] & 0xFE) | int(binary_secret[index])
+                index += 1
+            else:
+                break
+        if index >= len(binary_secret):
+            break
+
+    img = flat_img.reshape(height, width, channels)
+
+    cv2.imwrite(output_path, img)
+    return True
+
 
 def encode_text_image(input_path: str, output_path: str, secret_text: str):
     """Encodes image with date/time watermark and LSB message (no logo)."""

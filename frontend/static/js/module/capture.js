@@ -282,30 +282,6 @@ async function uploadImage(blob, capturedFace, setCapturedFace, setOriginalCaptu
 }
 
 
-// Optional: Only use if absolutely necessary
-async function enhanceFaceImage(canvas) {
-  const ctx = canvas.getContext("2d");
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-
-  // VERY minimal enhancement to avoid artifacts
-  const contrast = 1.02; // Reduced from 1.05
-  const brightness = 2; // Reduced from 3
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = (data[i] - 128) * contrast + 128 + brightness;
-    const g = (data[i + 1] - 128) * contrast + 128 + brightness;
-    const b = (data[i + 2] - 128) * contrast + 128 + brightness;
-
-    data[i] = Math.min(255, Math.max(0, r));
-    data[i + 1] = Math.min(255, Math.max(0, g));
-    data[i + 2] = Math.min(255, Math.max(0, b));
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-  return canvas;
-}
-
 export async function captureID(
   side, // "front" or "back"
   idCanvas,
@@ -414,7 +390,7 @@ export async function captureID(
     // Higher quality JPEG with better compression
     const imgBase64 = idCanvas.toDataURL("image/jpeg", 0.92);
 
-    const response = await fetch("/kyc/document", {
+    const response = await fetch("/upload-image-id", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -435,9 +411,12 @@ export async function captureID(
     }
 
     if (side === "idFront") {
-      localStorage.setItem("frontUpload", imgBase64);
+      localStorage.setItem("frontUpload", verification?.base64_original);
+      // stored the processed id
+      localStorage.setItem("frontUploadWaterMarked", verification?.base64_watermarked)
     } else {
-      localStorage.setItem("backUpload", imgBase64);
+      localStorage.setItem("backUpload", verification?.base64_original);
+      localStorage.setItem("backUploadWaterMarked", verification?.base64_watermarked)
     }
     return true;
   } catch (error) {
@@ -447,8 +426,10 @@ export async function captureID(
     setTimeout(() => errorloader.classList.add("hidden"), 3000);
     if (side === "idFront") {
       localStorage.setItem("frontUpload", "");
+      localStorage.setItem("frontUploadWaterMarked", "");
     } else {
       localStorage.setItem("backUpload", "");
+      localStorage.setItem("backUploadWaterMarked", "");
     }
     return false;
   } finally {
