@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Levidyo</title>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- TensorFlow.js Core -->
+
+    <!-- Face API -->
+    <script src="/static/js/face-api.js?v=3"></script>
+
+    <!-- Use this EXACT combination -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script> -->
+
+    <!-- App -->
+
+    <style>
+      
+      * {
+        box-sizing: border-box;
+      }
+
+      .glass {
+        @apply backdrop-blur-md bg-white/70 shadow-md;
+      }
+
+      input[type="date"] {
+        font-size: 16px; /* Prevent iOS zoom */
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: white;
+      }
+
+      .loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        font-family: system-ui, sans-serif;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .loader span {
+        -webkit-text-stroke: 1px #22c55e;
+        background: radial-gradient(
+              1.13em at 50% 1.6em,
+              #22c55e 99%,
+              #0000 101%
+            )
+            calc(50% - 1.6em) 0 / 3.2em 100% text,
+          radial-gradient(1.13em at 50% -0.8em, #0000 99%, #22c55e 101%) 50%
+            0.8em / 3.2em 100% repeat-x text;
+
+        background-clip: text;
+        color: transparent;
+        animation: l9 2s linear infinite;
+      }
+
+      @keyframes l9 {
+        to {
+          background-position: calc(50% + 1.6em) 0, calc(50% + 3.2em) 0.8em;
+        }
+      }
+
+      .loader-img {
+        margin-bottom: 10px;
+        filter: drop-shadow(0 0 2px #14af4d);
+        animation: l9-bounce 2s linear infinite;
+      }
+
+      @keyframes l9-bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      @keyframes zoomOutCenter {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+      }
+
+      .loader.zoom-out {
+        animation: zoomOutCenter 0.5s ease-out forwards;
+        transform-origin: center;
+      }
+
+      /* Animation styles */
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Card styling */
+      .bg-gray-100 {
+        background-color: #f3f4f6;
+      }
+      .bg-gray-200 {
+        background-color: #e5e7eb;
+      }
+
+      /* Safe rotation container */
+      .w-\[320px\] {
+        width: 320px;
+      }
+      .h-\[320px\] {
+        height: 320px;
+      }
+
+      /* Face styling */
+      .bg-amber-50 { background-color: #fffbeb; }
+      .bg-amber-100 { background-color: #fef3c7; }
+      .bg-rose-100 { background-color: #ffe4e6; }
+      .bg-rose-200 { background-color: #fecdd3; }
+
+      
+    </style>
+  </head>
+
+  <body class="h-screen overflow-hidden flex font-sans text-gray-800">
+    <div
+      id="mainLoader"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black/90 bg-opacity-50 backdrop-blur-sm z-50"
+    >
+      <div class="loader flex flex-col items-center">
+        <img
+          src="/static/logo/lg.png"
+          alt=""
+          srcset=""
+          class="loader-img w-[200px] h-full"
+        />
+        <span id="loader-content">Loading KYC</span>
+        <span id="loader-content2"></span>
+      </div>
+    </div>
+    <div class="h-screen w-full overflow-hidden flex font-sans text-gray-800">
+
+      <!-- Main Content Area -->
+      <div
+        class="flex-1 h-screen overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100"
+      >
+
+        <!-- Actual Page Content -->
+        <main class="animate-fade-in mb-10">
+          <!-- <img id="f" src="" alt="" />
+          <img id="b" src="" alt="" />
+          <img id="ff" src="" alt="" /> -->
+
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+
+    <script>
+      console.log(window.location.hostname);
+      lucide.createIcons();
+
+      const isProduction = window.location.hostname !== "127.0.0.1";
+
+      //if (isProduction) {
+      //  console.log = () => {};
+      //  console.warn = () => {};
+      //  console.error = () => {};
+      //  console.info = () => {};
+      //  console.debug = () => {};
+      //}
+
+      const toggle = document.getElementById("mobileMenuToggle");
+      const sidebar = document.getElementById("mobileSidebar");
+      const overlay = document.getElementById("mobileSidebarOverlay");
+      const closeBtn = document.getElementById("mobileSidebarClose");
+
+      function openSidebar() {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("opacity-0", "pointer-events-none");
+      }
+
+      toggle?.addEventListener("click", openSidebar);
+      closeBtn?.addEventListener("click", closeSidebar);
+      overlay?.addEventListener("click", closeSidebar);
+    </script>
+  </body>
+</html>

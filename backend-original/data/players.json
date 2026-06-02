@@ -1,0 +1,17 @@
+[
+    {
+        "user_id": "guest_1",
+        "password": "1234",
+        "kyc_status": "not-verified"
+    },
+    {
+        "user_id": "guest_2",
+        "password": "1234",
+        "kyc_status": "verified"
+    },
+    {
+        "user_id": "guest_3",
+        "password": "1234",
+        "kyc_status": "pending"
+    }
+]

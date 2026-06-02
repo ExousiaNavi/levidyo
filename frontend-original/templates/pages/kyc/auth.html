@@ -1,0 +1,163 @@
+<!-- frontend/templates/login.html -->
+{% extends "base.html" %} {% block content %}
+<div class="flex items-center justify-center min-h-[80dvh] bg-gray-100">
+  <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-md">
+    <h1 class="text-2xl font-bold text-center text-green-600 mb-1">
+      KYC Verification
+    </h1>
+    <!-- <p class="text-sm text-gray-600 text-center mb-6">Sign in to continue</p> -->
+
+    <div class="mb-4 text-center">
+  <p class="text-base text-gray-700">
+    Log in to your <span class="font-semibold text-green-600">BAGH Account</span> to continue.
+  </p>
+</div>
+
+    {% if error %}
+    <div
+      class="mb-4 text-red-600 text-sm bg-red-100 border border-red-300 rounded px-4 py-2"
+    >
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form id="loginForm" method="post" class="space-y-5">
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1"
+          >User ID</label
+        >
+        <input
+          type="text"
+          id="user_id"
+          name="user_id"
+          value="guest_1"
+          placeholder="Please enter your user id"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+        />
+      </div>
+
+      <div class="relative">
+        <label
+          for="password"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Password</label
+        >
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="************"
+          value="1234"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none pr-10"
+        />
+        <button
+          type="button"
+          onclick="togglePassword()"
+          class="absolute top-9 right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+        >
+          <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+      >
+        Login to KYC
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Login Loader Overlay -->
+<div
+  id="login-loader"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-md hidden"
+>
+  <div class="text-center">
+    <svg
+      class="animate-spin h-10 w-10 text-green-600 mx-auto mb-2"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      ></circle>
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v8z"
+      ></path>
+    </svg>
+    <p class="text-sm text-green-700 font-medium">Signing in...</p>
+  </div>
+</div>
+
+<script>
+  // toogle the password
+  function togglePassword() {
+    const input = document.getElementById("password");
+    const icon = document.getElementById("eyeIcon");
+
+    if (input.type === "password") {
+      input.type = "text";
+      icon.setAttribute("data-lucide", "eye-off");
+    } else {
+      input.type = "password";
+      icon.setAttribute("data-lucide", "eye");
+    }
+
+    lucide.createIcons(); // Refresh icon
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById("loginForm");
+    const loader = document.getElementById("login-loader");
+
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      loader.classList.remove("hidden");
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch("/kyc/login", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.redirected) {
+          // ✅ Redirect on successful login
+          window.location.href = response.url;
+          console.log(response)
+        } else if (response.status === 401) {
+          // ❌ Invalid credentials
+          const html = await response.text();
+          document.open();
+          document.write(html);
+          document.close();
+        }
+      } catch (err) {
+        alert("Login failed. Please try again.");
+        console.error(err);
+      } finally {
+        loader.classList.add("hidden");
+      }
+    });
+  });
+</script>
+
+<script>
+  console.log("KYC Authentication...");
+  // Authentication
+</script>
+{% endblock %}

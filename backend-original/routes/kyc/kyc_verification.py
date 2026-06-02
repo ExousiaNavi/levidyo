@@ -60,10 +60,8 @@ async def kyc_verification(request: Request):
     # is_kyc_verified = (kyc_status == "verified")
     doc_types = generate_doc_types()
 
-    return templates.TemplateResponse(
-                name="pages/kyc/verification-new.html", 
-                request=request,
-                context= {
+    return templates.TemplateResponse("pages/kyc/verification-new.html", {
+                "request": request,
                 "user": None,
                 "kyc_status": False,
                 "doc_types": doc_types,
